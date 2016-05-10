@@ -54,7 +54,10 @@ class M2QTSHARED_EXPORT IM2Qt : public QObject
 {
 public:
     virtual ~IM2Qt() = default;
+    virtual bool isValid() const = 0;
     virtual IM2QtHandler* createM2QtHandler(const QString& in_name, const QVariantMap &in_params) = 0;
+    virtual IM2QtHandler* getM2QtHandler(const QString& in_name) const = 0;
+    virtual void startHandler(const QString& in_name = QString()) const = 0;
 };
 
 // ----------------------------------------------------------------------------
@@ -62,16 +65,15 @@ public:
 // class M2QtLoader
 //
 // ----------------------------------------------------------------------------
-class M2QtCreator final
+class M2QtLoader final
 {
 public:
-    virtual ~M2QtCreator() = default;
-    explicit M2QtCreator() = delete;
-    M2QtCreator(const M2QtCreator& other) = delete;
-    M2QtCreator& operator= (const M2QtCreator& other) = delete;
+    virtual ~M2QtLoader() = default;
+    explicit M2QtLoader() = delete;
+    M2QtLoader(const M2QtLoader& other) = delete;
+    M2QtLoader& operator= (const M2QtLoader& other) = delete;
 
-    M2QTSHARED_EXPORT static IM2Qt& getM2Qt(const QVariantMap &in_params);
-    M2QTSHARED_EXPORT static IM2QtHandler* createM2QtHandler(const QVariantMap &in_params);
+    M2QTSHARED_EXPORT static M2QT::IM2Qt *getM2Qt();
 };
 
 } // namespace M2QT

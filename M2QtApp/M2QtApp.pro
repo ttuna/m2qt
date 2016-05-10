@@ -41,13 +41,13 @@ DESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET     #copy .
 DLLDESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET  #copy .dll file
 
 windows {
-#    SODIUM_DIR = c:/MyTools/ZeroMQ/libsodium
-#    ZMQ_DIR = c:/MyTools/ZeroMQ/libzmq
-#    CPP_ZMQ_DIR = c:/MyTools/ZeroMQ/cppzmq
+    SODIUM_DIR = c:/MyTools/ZeroMQ/libsodium
+    ZMQ_DIR = c:/MyTools/ZeroMQ/libzmq
+    CPP_ZMQ_DIR = c:/MyTools/ZeroMQ/cppzmq
 
-    SODIUM_DIR = e:/MyTools/ZeroMQ/libsodium
-    ZMQ_DIR = e:/MyTools/ZeroMQ/libzmq
-    CPP_ZMQ_DIR = e:/MyTools/ZeroMQ/cppzmq
+#    SODIUM_DIR = e:/MyTools/ZeroMQ/libsodium
+#    ZMQ_DIR = e:/MyTools/ZeroMQ/libzmq
+#    CPP_ZMQ_DIR = e:/MyTools/ZeroMQ/cppzmq
 
     M2QT_DIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET/
 }

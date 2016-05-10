@@ -43,13 +43,13 @@ windows {
 INCLUDE_DIR = $$PWD/../include
 
 windows {
-#    SODIUM_DIR = c:/MyTools/ZeroMQ/libsodium
-#    ZMQ_DIR = c:/MyTools/ZeroMQ/libzmq
-#    CPP_ZMQ_DIR = c:/MyTools/ZeroMQ/cppzmq
+    SODIUM_DIR = c:/MyTools/ZeroMQ/libsodium
+    ZMQ_DIR = c:/MyTools/ZeroMQ/libzmq
+    CPP_ZMQ_DIR = c:/MyTools/ZeroMQ/cppzmq
 
-    SODIUM_DIR = e:/MyTools/ZeroMQ/libsodium
-    ZMQ_DIR = e:/MyTools/ZeroMQ/libzmq
-    CPP_ZMQ_DIR = e:/MyTools/ZeroMQ/cppzmq
+#    SODIUM_DIR = e:/MyTools/ZeroMQ/libsodium
+#    ZMQ_DIR = e:/MyTools/ZeroMQ/libzmq
+#    CPP_ZMQ_DIR = e:/MyTools/ZeroMQ/cppzmq
 
     INCLUDEPATH += \
         $$SODIUM_DIR/src/libsodium/include \

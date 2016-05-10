@@ -8,7 +8,8 @@
 #include <QScopedPointer>
 #include <QDebug>
 
-using namespace M2QT;
+
+namespace M2QT {
 
 // ----------------------------------------------------------------------------
 //
@@ -23,9 +24,11 @@ public:
 
 public slots:
     void cleanup();
-    bool init(zmq::context_t *in_ctx, const QVariantMap &in_params);
+    bool init(zmq::context_t *in_ctx);
     bool isValid() const;
     IM2QtHandler* createM2QtHandler(const QString& in_name, const QVariantMap &in_params);
+    IM2QtHandler* getM2QtHandler(const QString& in_name) const;
+    void startHandler(const QString &in_name = QString()) const;
 
 private:
     bool m_initialized = false;
@@ -34,6 +37,10 @@ private:
     QMap<QString, Handler*> m_handler_map;
 };
 #include "m2qt.moc"
+
+} // namespace
+
+using namespace M2QT;
 
 // ----------------------------------------------------------------------------
 // ctor / dtor / ...
@@ -60,10 +67,9 @@ void M2Qt::cleanup()
 // ----------------------------------------------------------------------------
 // init
 // ----------------------------------------------------------------------------
-bool M2Qt::init(zmq::context_t* in_ctx, const QVariantMap &in_params)
+bool M2Qt::init(zmq::context_t* in_ctx)
 {
     qDebug() << "M2Qt::init";
-
     if (in_ctx == nullptr) return false;
 
     m_p_zmq_ctx = in_ctx;
@@ -85,6 +91,8 @@ bool M2Qt::isValid() const
 // ----------------------------------------------------------------------------
 IM2QtHandler *M2Qt::createM2QtHandler(const QString& in_name, const QVariantMap &in_params)
 {
+    if (m_initialized == false) return nullptr;
+    if (in_name.isEmpty()) return nullptr;
     if (in_params.isEmpty()) return nullptr;
     if (m_handler_map.contains(in_name)) return m_handler_map.value(in_name, nullptr);
 
@@ -92,7 +100,9 @@ IM2QtHandler *M2Qt::createM2QtHandler(const QString& in_name, const QVariantMap 
     if (p_thread.isNull()) return nullptr;
     QScopedPointer<Handler> p_handler(new Handler());
     if (p_handler.isNull()) return nullptr;
-    if (p_handler->init(m_p_zmq_ctx, in_params) == false) return nullptr;
+
+    p_handler->setZmqCtx(m_p_zmq_ctx);
+    p_handler->setParams(in_params);
 
     QThread* t = p_thread.take();
     Handler* h = p_handler.take();
@@ -109,6 +119,33 @@ IM2QtHandler *M2Qt::createM2QtHandler(const QString& in_name, const QVariantMap 
     return h;
 }
 
+// ----------------------------------------------------------------------------
+// getM2QtHandler
+// ----------------------------------------------------------------------------
+IM2QtHandler *M2Qt::getM2QtHandler(const QString &in_name) const
+{
+    if (m_initialized == false) return nullptr;
+    if (in_name.isEmpty()) return nullptr;
+    if (m_handler_map.contains(in_name)) return m_handler_map.value(in_name, nullptr);
+}
+
+// ----------------------------------------------------------------------------
+// getM2QtHandler
+// ----------------------------------------------------------------------------
+void M2Qt::startHandler(const QString &in_name /*=QString()*/) const
+{
+    if (m_initialized == false) return;
+
+    QStringList handler_names = (in_name.isEmpty()) ? m_handler_map.keys() : QStringList(in_name);
+    foreach(QString name, handler_names)
+    {
+        IM2QtHandler* handler = m_handler_map.value(name, nullptr);
+        if (handler == nullptr) continue;
+
+        handler->start();
+    }
+}
+
 
 // ----------------------------------------------------------------------------
 //
@@ -118,16 +155,20 @@ IM2QtHandler *M2Qt::createM2QtHandler(const QString& in_name, const QVariantMap 
 // ----------------------------------------------------------------------------
 // createM2Qt (static)
 // ----------------------------------------------------------------------------
-IM2Qt &M2QtCreator::getM2Qt(const QVariantMap &in_params)
+IM2Qt *M2QtLoader::getM2Qt()
 {
-    static M2Qt p_lib;
+    static M2Qt *p_lib;
 
-    if (p_lib.isValid() == false)
+    if (p_lib == nullptr)
     {
-        zmq::context_t* p_zmq_ctx = new zmq::context_t;
-        if (p_zmq_ctx == nullptr) return p_lib;
+        QScopedPointer<M2Qt> tmp_p_lib(new M2Qt());
+        if (tmp_p_lib.isNull()) return nullptr;
 
-        p_lib.init(p_zmq_ctx, in_params);
+        zmq::context_t* p_zmq_ctx = new zmq::context_t;
+        if (p_zmq_ctx == nullptr) return nullptr;
+
+        if (tmp_p_lib->init(p_zmq_ctx) == false) return nullptr;
+        p_lib = tmp_p_lib.take();
     }
 
     return p_lib;
