@@ -1,6 +1,8 @@
 ﻿#include "m2qt.h"
-#include "serverconnection.h"
-#include "zmq.hpp"
+#include "m2qt_handler.h"
+
+#include <zmq.hpp>
+
 #include <QVariant>
 #include <QSharedPointer>
 #include <QScopedPointer>
@@ -23,11 +25,13 @@ public slots:
     void cleanup();
     bool init(zmq::context_t *in_ctx, const QVariantMap &in_params);
     bool isValid() const;
-    void receive();
+    IM2QtHandler* createM2QtHandler(const QString& in_name, const QVariantMap &in_params);
 
 private:
     bool m_initialized = false;
-    QSharedPointer<ServerConnection> m_p_server_con;
+    zmq::context_t* m_p_zmq_ctx = nullptr;
+
+    QMap<QString, Handler*> m_handler_map;
 };
 #include "m2qt.moc"
 
@@ -44,11 +48,12 @@ M2Qt::M2Qt()
 // ----------------------------------------------------------------------------
 void M2Qt::cleanup()
 {
-    qDebug() << "M2Qt::cleanup()";
+    qDebug() << "M2Qt::cleanup";
 
-    if (m_p_server_con.isNull() == false)
+    if (m_handler_map.isEmpty() == false)
     {
-        m_p_server_con.clear();
+        qDeleteAll(m_handler_map);
+        m_handler_map.clear();
     }
 }
 
@@ -57,16 +62,11 @@ void M2Qt::cleanup()
 // ----------------------------------------------------------------------------
 bool M2Qt::init(zmq::context_t* in_ctx, const QVariantMap &in_params)
 {
-    qDebug() << "M2Qt::init()";
+    qDebug() << "M2Qt::init";
 
     if (in_ctx == nullptr) return false;
-    if (in_params.isEmpty()) return false;
 
-    QScopedPointer<ServerConnection> tmp_server_con(new ServerConnection);
-    if (tmp_server_con.isNull()) return false;
-    if (tmp_server_con->init(in_ctx, in_params) == false) return false;
-
-    m_p_server_con = QSharedPointer<ServerConnection>(tmp_server_con.take());
+    m_p_zmq_ctx = in_ctx;
 
     m_initialized = true;
     return true;
@@ -81,30 +81,54 @@ bool M2Qt::isValid() const
 }
 
 // ----------------------------------------------------------------------------
-// receive
+// createM2QtHandler
 // ----------------------------------------------------------------------------
-void M2Qt::receive()
+IM2QtHandler *M2Qt::createM2QtHandler(const QString& in_name, const QVariantMap &in_params)
 {
-    qDebug() << "M2Qt::receive()";
-    if (m_initialized == false) return;
+    if (in_params.isEmpty()) return nullptr;
+    if (m_handler_map.contains(in_name)) return m_handler_map.value(in_name, nullptr);
 
-    m_p_server_con->receive();
+    QScopedPointer<QThread> p_thread(new QThread());
+    if (p_thread.isNull()) return nullptr;
+    QScopedPointer<Handler> p_handler(new Handler());
+    if (p_handler.isNull()) return nullptr;
+    if (p_handler->init(m_p_zmq_ctx, in_params) == false) return nullptr;
+
+    QThread* t = p_thread.take();
+    Handler* h = p_handler.take();
+    m_handler_map[in_name] = h;
+
+    // start handler when thread has started ...
+    QObject::connect(t, &QThread::started, h, &Handler::start);
+    // delete handler when thread has finished ...
+    QObject::connect(t, &QThread::finished, h, &QObject::deleteLater);
+
+    h->moveToThread(t);
+    t->start();
+
+    return h;
 }
 
 
 // ----------------------------------------------------------------------------
 //
-// class M2QtLoader
+// class M2QtCreator
 //
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
-// load (static)
+// createM2Qt (static)
 // ----------------------------------------------------------------------------
-IM2Qt &M2QtLoader::load()
+IM2Qt &M2QtCreator::getM2Qt(const QVariantMap &in_params)
 {
-    qDebug() << "M2QtLoader::load()";
-    static M2Qt* p_lib = nullptr;
+    static M2Qt p_lib;
 
-    if (p_lib == nullptr) p_lib = new M2Qt();
-    return *p_lib;
+    if (p_lib.isValid() == false)
+    {
+        zmq::context_t* p_zmq_ctx = new zmq::context_t;
+        if (p_zmq_ctx == nullptr) return p_lib;
+
+        p_lib.init(p_zmq_ctx, in_params);
+    }
+
+    return p_lib;
 }

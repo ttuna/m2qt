@@ -14,6 +14,11 @@ CONFIG += c++11
 TARGET = m2qt
 TEMPLATE = lib
 
+DEFINES += M2QTSHARED_EXPORT
+DEFINES *= QT_USE_QSTRINGBUILDER
+DEFINES *= QT_NO_CAST_TO_ASCII \
+           QT_RESTRICTED_CAST_FROM_ASCII
+
 windows {
     contains(QT_ARCH, i386) {
         PLATFORM = Win32
@@ -31,49 +36,42 @@ windows {
     }
 
     LINKAGE = dynamic
+
+    message($$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET/$$LINKAGE)
 }
-message($$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET/$$LINKAGE)
+
 INCLUDE_DIR = $$PWD/../include
 
-DEFINES += M2QTSHARED_EXPORT
-DEFINES *= QT_USE_QSTRINGBUILDER
-DEFINES *= QT_RESTRICTED_CAST_FROM_ASCII \
-           QT_NO_CAST_TO_ASCII
-
-DESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET     #copy .lib file
-DLLDESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET  #copy .dll file
-
 windows {
-    SODIUM_DIR = c:/MyTools/ZeroMQ/libsodium
-    ZMQ_DIR = c:/MyTools/ZeroMQ/libzmq
-    CPP_ZMQ_DIR = c:/MyTools/ZeroMQ/cppzmq
+#    SODIUM_DIR = c:/MyTools/ZeroMQ/libsodium
+#    ZMQ_DIR = c:/MyTools/ZeroMQ/libzmq
+#    CPP_ZMQ_DIR = c:/MyTools/ZeroMQ/cppzmq
 
-#    SODIUM_DIR = e:/MyTools/ZeroMQ/libsodium
-#    ZMQ_DIR = e:/MyTools/ZeroMQ/libzmq
-#    CPP_ZMQ_DIR = e:/MyTools/ZeroMQ/cppzmq
+    SODIUM_DIR = e:/MyTools/ZeroMQ/libsodium
+    ZMQ_DIR = e:/MyTools/ZeroMQ/libzmq
+    CPP_ZMQ_DIR = e:/MyTools/ZeroMQ/cppzmq
+
+    INCLUDEPATH += \
+        $$SODIUM_DIR/src/libsodium/include \
+        $$ZMQ_DIR/include \
+        $$CPP_ZMQ_DIR
+    DEPENDPATH += \
+        $$SODIUM_DIR/src/libsodium/include \
+        $$ZMQ_DIR/include \
+        $$CPP_ZMQ_DIR
 }
 
-INCLUDEPATH += \
-    $$INCLUDE_DIR \
-    $$SODIUM_DIR/src/libsodium/include \
-    $$ZMQ_DIR/include \
-    $$CPP_ZMQ_DIR
-DEPENDPATH += \
-    $$INCLUDE_DIR \
-    $$SODIUM_DIR/src/libsodium/include \
-    $$ZMQ_DIR/include \
-    $$CPP_ZMQ_DIR
+INCLUDEPATH += $$INCLUDE_DIR
+DEPENDPATH += $$INCLUDE_DIR
 
 windows {
     LIBS += -L$$SODIUM_DIR/bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET/$$LINKAGE -llibsodium
     LIBS += -L$$ZMQ_DIR/bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET/$$LINKAGE -llibzmq
 }
 
+DESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET     #copy .lib file
+DLLDESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET  #copy .dll file
+
 include(m2qt.pri)
 
 HEADERS += $$INCLUDE_DIR/m2qt.h
-
-unix {
-    target.path = /usr/lib
-    INSTALLS += target
-}

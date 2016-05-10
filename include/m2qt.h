@@ -2,7 +2,7 @@
 #define M2QT_H
 
 #include <QObject>
-
+#include <QMap>
 #include <QtCore/qglobal.h>
 
 #if defined(Q_OS_WIN)
@@ -21,11 +21,29 @@
 #  define M2QTSHARED_EXPORT
 #endif
 
-namespace zmq {
-class context_t;
-}
-
 namespace M2QT {
+
+using NetString = std::tuple<quint32, QByteArray>;
+using Message = std::tuple<QString, QString, QString, QJsonObject, QList<NetString>>;
+typedef void (*IM2QtHandlerCallback)(const Message&);
+
+// ----------------------------------------------------------------------------
+//
+// class IM2QtHandler
+//
+// ----------------------------------------------------------------------------
+class M2QTSHARED_EXPORT IM2QtHandler : public QObject
+{
+public:
+    virtual ~IM2QtHandler() = default;
+
+public slots:
+    virtual void start() = 0;
+    virtual void stop() = 0;
+    virtual void registerCallback(const QString &in_name, IM2QtHandlerCallback in_callback) = 0;
+
+signals:
+};
 
 // ----------------------------------------------------------------------------
 //
@@ -36,12 +54,7 @@ class M2QTSHARED_EXPORT IM2Qt : public QObject
 {
 public:
     virtual ~IM2Qt() = default;
-
-public slots:
-    virtual void cleanup() = 0;
-    virtual bool init(zmq::context_t* in_ctx, const QVariantMap &in_params) = 0;
-    virtual bool isValid() const = 0;
-    virtual void receive() = 0;
+    virtual IM2QtHandler* createM2QtHandler(const QString& in_name, const QVariantMap &in_params) = 0;
 };
 
 // ----------------------------------------------------------------------------
@@ -49,15 +62,16 @@ public slots:
 // class M2QtLoader
 //
 // ----------------------------------------------------------------------------
-class M2QtLoader final
+class M2QtCreator final
 {
 public:
-    virtual ~M2QtLoader() = default;
-    explicit M2QtLoader() = delete;
-    M2QtLoader(const M2QtLoader& other) = delete;
-    M2QtLoader& operator= (const M2QtLoader& other) = delete;
+    virtual ~M2QtCreator() = default;
+    explicit M2QtCreator() = delete;
+    M2QtCreator(const M2QtCreator& other) = delete;
+    M2QtCreator& operator= (const M2QtCreator& other) = delete;
 
-    M2QTSHARED_EXPORT static IM2Qt& load();
+    M2QTSHARED_EXPORT static IM2Qt& getM2Qt(const QVariantMap &in_params);
+    M2QTSHARED_EXPORT static IM2QtHandler* createM2QtHandler(const QVariantMap &in_params);
 };
 
 } // namespace M2QT
