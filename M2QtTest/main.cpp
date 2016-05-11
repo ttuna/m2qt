@@ -21,11 +21,13 @@ int main(int argc, char *argv[])
     QObject::connect(&test_sock, static_cast<void(QWebSocket::*)(QAbstractSocket::SocketError)>(&QWebSocket::error), &helper, &WebSocketHelper::slotOnError);
     QObject::connect(&test_sock, &QWebSocket::textMessageReceived, &helper, &WebSocketHelper::slotOnTextMessage);
 
-    //QUrl url("ws://157.247.245.36:6767/websocket/");
-    QUrl url("ws://192.168.0.13:6767/websocket/");
+    QUrl url("ws://157.247.245.36:6767/websocket/");
+    //QUrl url("ws://192.168.0.13:6767/websocket/");
     QNetworkRequest ws_req(url);
-    //ws_req.setRawHeader(QByteArray("Origin"), QByteArray("http://157.247.245.36"));
-    ws_req.setRawHeader(QByteArray("Origin"), QByteArray("http://192.168.0.13"));
+    ws_req.setRawHeader(QByteArray("Origin"), QByteArray("http://157.247.245.36"));
+    //ws_req.setRawHeader(QByteArray("Origin"), QByteArray("http://192.168.0.13"));
+
+    test_sock.open(ws_req);
 
     qDebug() << "ws_req url:" << ws_req.url();
     qDebug() << "ws_req header:";
@@ -34,8 +36,6 @@ int main(int argc, char *argv[])
     qDebug() << "\tHost:" << ws_req.rawHeader(QByteArray("Host"));
     qDebug() << "\tOrigin:" << ws_req.rawHeader(QByteArray("Origin"));
     qDebug() << "---";
-
-    test_sock.open(ws_req);
 
     return a.exec();
 }

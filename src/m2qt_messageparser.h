@@ -14,19 +14,29 @@
 
 namespace M2QT {
 
+// ----------------------------------------------------------------------------
+//
+// class MessageParser
+//
+// ----------------------------------------------------------------------------
 class MessageParser : public QObject
 {
     Q_OBJECT
 public:
     explicit MessageParser(QObject *parent = 0);
 
+    static QJsonObject getJson(const NetString &in_netstring);
+
 signals:
     void signalError(QString error_msg) const;
-    void signalResult(Message msg) const;
+    void signalResult(Request msg) const;
 
 public slots:
-    Message parse(const QByteArray &in_data) const;
-    QList<NetString> getNetStrings(const QByteArray &in_data) const;
+    Request parse(const QByteArray &in_data) const;
+
+private:
+    static QList<NetString> getNetStrings(const QByteArray &in_data);
+
 };
 
 } // namespace

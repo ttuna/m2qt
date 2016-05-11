@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QVariant>
+#include <QVector>
 #include <QMap>
 
 #include <m2qt.h>
@@ -21,11 +22,14 @@ public:
 signals:
 
 public slots:
+    bool createHandler(const QString &in_name, const QVariantMap &in_params);
     void startHandler(const QString &in_name = QString());
+    void stopHandler(const QString &in_name = QString());
 
 private:
     bool m_initialized = false;
     M2QT::IM2Qt* m_p_m2qt;
+    QVector<QString> m_handler_names;
 };
 
 #endif // CONTROLLER_H

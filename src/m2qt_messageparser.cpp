@@ -3,60 +3,48 @@
 
 using namespace M2QT;
 
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
 MessageParser::MessageParser(QObject *parent) : QObject(parent)
 {
-
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-Message MessageParser::parse(const QByteArray &in_data) const   // TODO: make this static ???
+Request MessageParser::parse(const QByteArray &in_data) const   // TODO: make this static ???
 {
     if (in_data.isEmpty())
     {
         emit signalError(QLatin1String("MessageParser::parse - Empty message!"));
-        return Message();
+        return Request();
     }
 
     const QList<QByteArray> token_list = in_data.split(' ');
     if (token_list.isEmpty())
     {
         emit signalError(QLatin1String("MessageParser::parse - Token list is empty!"));
-        return Message();
+        return Request();
     }
     else if (token_list.count() != 4)
     {
         emit signalError(QLatin1String("MessageParser::parse - Token list mismatch!"));
-        return Message();
+        return Request();
     }
 
-    QString uuid(QLatin1String(token_list[0].data()));
-    QString id(QLatin1String(token_list[1].data()));
-    QString path(QLatin1String(token_list[2].data()));
+    QByteArray uuid(token_list[0]);
+    QByteArray id(token_list[1]);
+    QByteArray path(token_list[2]);
 
     QList<NetString> net_strings = getNetStrings(token_list[3]);
     if (net_strings.size() < 1)
     {
-        emit signalError(QLatin1String("MessageParser::parse - No header data available!"));
-        return Message();
+        emit signalError(QLatin1String("MessageParser::parse - No message data available!"));
+        return Request();
     }
 
-    QJsonDocument jdoc = QJsonDocument::fromJson(std::get<1>(net_strings.takeFirst()));
-    if (jdoc.isEmpty())
-    {
-        emit signalError(QLatin1String("MessageParser::parse - Could not parse header data!"));
-        return Message();
-    }
-
-    QJsonObject jobj = jdoc.object();
-    if (jobj.isEmpty())
-    {
-        emit signalError(QLatin1String("MessageParser::parse - Could not parse header data!"));
-        return Message();
-    }
-
-    Message result = std::make_tuple(uuid, id, path, jobj, net_strings);
+    Request result = std::make_tuple(uuid, id, path, net_strings);
     emit signalResult(result);
     return result;
 }
@@ -64,7 +52,7 @@ Message MessageParser::parse(const QByteArray &in_data) const   // TODO: make th
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-QList<NetString> MessageParser::getNetStrings(const QByteArray &in_data) const
+QList<NetString> MessageParser::getNetStrings(const QByteArray &in_data)
 {
     if (in_data.isEmpty()) return QList<NetString>();
 
@@ -98,3 +86,19 @@ QList<NetString> MessageParser::getNetStrings(const QByteArray &in_data) const
     return net_strings;
 }
 
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+QJsonObject MessageParser::getJson(const NetString &in_netstring)
+{
+    quint32 size = std::get<NetStringIdx::SIZE>(in_netstring);
+    if (size == 0) return QJsonObject();
+    QByteArray data = std::get<NetStringIdx::DATA>(in_netstring);
+    if (data.isEmpty()) return QJsonObject();
+
+    QJsonDocument jdoc = QJsonDocument::fromJson(data);
+    if (jdoc.isEmpty()) return QJsonObject();
+
+    QJsonObject jobj = jdoc.object();
+    return jobj;
+}

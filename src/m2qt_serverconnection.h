@@ -35,14 +35,16 @@ public:
     QByteArray senderId() const;
 
 public slots:
-    void receive();
+    void poll();
+    void stop();
+    void send(const Response &in_rep);
     void setPubAddr(QByteArray pub_addr);
     void setPullAddr(QByteArray pull_addr);
     void setSenderId(QByteArray sender_id);
 
 signals:
+    void signalError(QString error);    // TODO: use it ...
     void signalNewMessage(QByteArray data);
-    void signalError(QString error);
     void signalPubAddrChanged(QByteArray pub_addr);
     void signalPullAddrChanged(QByteArray pull_addr);
     void signalSenderIdChanged(QByteArray sender_id);
@@ -53,8 +55,9 @@ private:
     QByteArray m_pull_addr;
     QByteArray m_sender_id;
     zmq::context_t* m_p_zmq_ctx = nullptr;
-    zmq::socket_t* m_p_pull_sock = nullptr;
-    zmq::socket_t* m_p_pub_sock = nullptr;
+//    zmq::socket_t* m_p_pull_sock = nullptr;
+//    zmq::socket_t* m_p_pub_sock = nullptr;
+    QAtomicInt m_running = 0;
 };
 
 } // namespace M2QT

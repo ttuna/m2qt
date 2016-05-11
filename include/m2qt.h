@@ -23,27 +23,16 @@
 
 namespace M2QT {
 
-using NetString = std::tuple<quint32, QByteArray>;
-using Message = std::tuple<QString, QString, QString, QJsonObject, QList<NetString>>;
-typedef void (*IM2QtHandlerCallback)(const Message&);
+using NetString = std::tuple<quint32, QByteArray>;                                  // size : data
+enum NetStringIdx {SIZE=0, DATA};
 
-// ----------------------------------------------------------------------------
-//
-// class IM2QtHandler
-//
-// ----------------------------------------------------------------------------
-class M2QTSHARED_EXPORT IM2QtHandler : public QObject
-{
-public:
-    virtual ~IM2QtHandler() = default;
+using Request = std::tuple<QByteArray, QByteArray, QByteArray, QList<NetString>>;   // uuid : id : path : netstrings
+enum RequestIdx {REQ_UUID=0, REQ_ID, REQ_PATH, REQ_NETSTRINGS};
 
-public slots:
-    virtual void start() = 0;
-    virtual void stop() = 0;
-    virtual void registerCallback(const QString &in_name, IM2QtHandlerCallback in_callback) = 0;
+using Response = std::tuple<QByteArray, QByteArray, QByteArray>;                    // uuid : (size(id):id) : body
+enum ResponseIdx {REP_UUID=0, REP_ID, REP_BODY};
 
-signals:
-};
+typedef Response (*HandlerCallback)(const Request&);
 
 // ----------------------------------------------------------------------------
 //
@@ -55,9 +44,10 @@ class M2QTSHARED_EXPORT IM2Qt : public QObject
 public:
     virtual ~IM2Qt() = default;
     virtual bool isValid() const = 0;
-    virtual IM2QtHandler* createM2QtHandler(const QString& in_name, const QVariantMap &in_params) = 0;
-    virtual IM2QtHandler* getM2QtHandler(const QString& in_name) const = 0;
+    virtual bool createHandler(const QString& in_name, const QVariantMap &in_params) = 0;
     virtual void startHandler(const QString& in_name = QString()) const = 0;
+    virtual void stopHandler(const QString& in_name = QString()) const = 0;
+    virtual void addHandlerCallback(const QString& in_name, HandlerCallback in_callback) const = 0;
 };
 
 // ----------------------------------------------------------------------------

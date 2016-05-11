@@ -21,9 +21,6 @@ bool Controller::init(const QVariantMap &in_params)
     m_p_m2qt = M2QtLoader::getM2Qt();
     if (m_p_m2qt == nullptr) return false;
 
-    IM2QtHandler* web_socket_handler = m_p_m2qt->createM2QtHandler("web_socket_handler", in_params);
-    if (web_socket_handler == nullptr) qDebug() << "handler == nullptr";
-
     m_initialized = true;
     return true;
 }
@@ -53,10 +50,35 @@ bool Controller::isValid() const
 }
 
 // ----------------------------------------------------------------------------
+// createHandler
+// ----------------------------------------------------------------------------
+bool Controller::createHandler(const QString &in_name, const QVariantMap &in_params)
+{
+    if (m_initialized == false) return false;
+    if (in_name.isEmpty()) return false;
+
+    bool created = m_p_m2qt->createHandler(in_name, in_params);
+
+    if (created == false) qDebug() << "Controller::init handler creation failed ...";
+    else m_handler_names.push_back(in_name);
+
+    return created;
+}
+
+// ----------------------------------------------------------------------------
 // startHandler
 // ----------------------------------------------------------------------------
 void Controller::startHandler(const QString &in_name /*=QString()*/)
 {
     if (m_initialized == false) return;
     m_p_m2qt->startHandler(in_name);
+}
+
+// ----------------------------------------------------------------------------
+// stopHandler
+// ----------------------------------------------------------------------------
+void Controller::stopHandler(const QString &in_name /*=QString()*/)
+{
+    if (m_initialized == false) return;
+    m_p_m2qt->stopHandler(in_name);
 }

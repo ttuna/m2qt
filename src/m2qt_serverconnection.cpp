@@ -12,17 +12,6 @@ ServerConnection::ServerConnection(QObject *in_parent) : QObject(in_parent)
 
 ServerConnection::~ServerConnection()
 {
-    int time = 0;
-    if (m_p_pull_sock)
-    {
-        m_p_pull_sock->setsockopt(ZMQ_LINGER, &time, sizeof(time));
-        delete m_p_pull_sock;
-    }
-    if (m_p_pub_sock)
-    {
-        m_p_pub_sock->setsockopt(ZMQ_LINGER, &time, sizeof(time));
-        delete m_p_pub_sock;
-    }
 }
 
 // ----------------------------------------------------------------------------
@@ -34,21 +23,7 @@ bool ServerConnection::init(zmq::context_t* in_zmq_ctx, const QVariantMap& in_pa
     if (in_zmq_ctx == nullptr) return false;
 
     if (update(in_params) == false) return false;
-    if (m_pull_addr.isEmpty()) return false;
-    if (m_pub_addr.isEmpty()) return false;
-    if (m_sender_id.isEmpty()) return false;
-
-    QScopedPointer<zmq::socket_t> tmp_pull_sock(new zmq::socket_t(*in_zmq_ctx, ZMQ_PULL));
-    if (tmp_pull_sock.isNull()) return false;
-    QScopedPointer<zmq::socket_t> tmp_pub_sock(new zmq::socket_t(*in_zmq_ctx, ZMQ_PUB));
-    if (tmp_pub_sock.isNull()) return false;
-
-    m_p_pull_sock = tmp_pull_sock.take();
-    m_p_pub_sock = tmp_pub_sock.take();
-    m_p_pub_sock->setsockopt(ZMQ_IDENTITY, m_sender_id.data(), m_sender_id.length());
-
-    m_p_pull_sock->connect(m_pull_addr.data());
-    m_p_pub_sock->connect(m_pub_addr.data());
+    m_p_zmq_ctx = in_zmq_ctx;
 
     m_initialized = true;
     return true;
@@ -74,6 +49,11 @@ bool ServerConnection::update(const QVariantMap &in_params)
         m_sender_id = in_params["sender_id"].toByteArray();
         qDebug() << "ServerConnection::update - sender_id:" << m_sender_id;
     }
+
+    if (m_pull_addr.isEmpty()) return false;
+    if (m_pub_addr.isEmpty()) return false;
+    if (m_sender_id.isEmpty()) return false;
+
     return true;
 }
 
@@ -88,21 +68,34 @@ bool ServerConnection::isValid() const
 // ----------------------------------------------------------------------------
 // receive - loop ...
 // ----------------------------------------------------------------------------
-void ServerConnection::receive()
+void ServerConnection::poll()
 {
-    qDebug() << "ServerConnection::receive";
+    qDebug() << "ServerConnection::poll";
+    if (m_initialized == false) return;
 
+    // init connections ...
+    QScopedPointer<zmq::socket_t> tmp_pull_sock(new zmq::socket_t(*m_p_zmq_ctx, ZMQ_PULL));
+    if (tmp_pull_sock.isNull()) return;
+
+    zmq::socket_t* pull_sock = tmp_pull_sock.take();
+    pull_sock->connect(m_pull_addr.data());
+
+    // init poller ...
+    zmq::message_t msg;
     zmq::pollitem_t items [] = {
-        { *m_p_pull_sock, 0, ZMQ_POLLIN, 0 }
+        { *pull_sock, 0, ZMQ_POLLIN, 0 }
     };
 
-    zmq::message_t msg;
-    while (1) {
+    // set running-flag and ... BANZAIIII
+    m_running.testAndSetRelaxed(0, 1);
+    qDebug() << "ServerConnection::poll -" << ((m_running.load() == 1) ? "starting ..." : "error ...");
+
+    while (m_running.load()) {
         zmq::poll(&items[0], 1, -1);
 
         if (items[0].revents & ZMQ_POLLIN)
         {
-            m_p_pull_sock->recv(&msg);
+            pull_sock->recv(&msg);
 
             QByteArray in_msg(msg.data<char>(), msg.size());
             if (in_msg.isEmpty() == false)
@@ -110,6 +103,56 @@ void ServerConnection::receive()
             else
                 emit signalError(QLatin1String("ServerConnection::receive - Empty message! Skip ..."));
         }
+    }
+
+    // cleanup ...
+    int time = 0;
+    if (pull_sock)
+    {
+        pull_sock->setsockopt(ZMQ_LINGER, &time, sizeof(time));
+        delete pull_sock;
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+void ServerConnection::stop()
+{
+    qDebug() << "ServerConnection::stop";
+    if (m_initialized == false) return;
+
+    // reset running-flag ...
+    m_running.testAndSetRelaxed(1, 0);
+    qDebug() << "ServerConnection::stop() -:" << ((m_running.load() == 0) ? "stopping ..." : "error ...");
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+void ServerConnection::send(const Response &in_rep)
+{
+    qDebug() << "ServerConnection::send";
+    if (m_initialized == false) return;
+
+    static zmq::socket_t* pub_sock = nullptr;
+    if (pub_sock == nullptr)
+    {
+        pub_sock = new zmq::socket_t(*m_p_zmq_ctx, ZMQ_PUB);
+        if (pub_sock == nullptr) return;
+
+        pub_sock->setsockopt(ZMQ_IDENTITY, m_sender_id.data(), m_sender_id.length());
+        pub_sock->connect(m_pub_addr.data());
+    }
+
+    zmq::message_t msg = toZmqMessage(in_rep);
+    bool ret = pub_sock->send(msg);
+
+    int time = 0;
+    if (pub_sock)
+    {
+        pub_sock->setsockopt(ZMQ_LINGER, &time, sizeof(time));
+        delete pub_sock;
     }
 }
 

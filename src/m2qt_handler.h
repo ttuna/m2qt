@@ -5,26 +5,32 @@
 #include "m2qt_global.h"
 
 #include <QObject>
-#include <QThread>
 #include <QVariant>
+#include <QVector>
 #include <QSharedPointer>
+#include <QtConcurrent>
 
 #include <zmq.hpp>
 
 namespace M2QT {
 
-class IM2Qt;
 class ServerConnection;
 class MessageParser;
 
-class Handler final : public IM2QtHandler
+// ----------------------------------------------------------------------------
+//
+// class Handler
+//
+// ----------------------------------------------------------------------------
+class Handler final : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(zmq::context_t* p_zmq_ctx READ zmqCtx WRITE setZmqCtx NOTIFY signalZmqCtxChanged)
-    Q_PROPERTY(QVariantMap params READ params WRITE setParams NOTIFY signalParamsChanged)
+    Q_PROPERTY(QStringList default_callbacks READ defaultCallbacks WRITE setDefaultCallbacks NOTIFY signalDefaultCallbacksChanged)
 public:
-    explicit Handler();
+    explicit Handler(QObject* parent = nullptr);
     ~Handler();
+    Handler(const Handler& other) = delete;
+    Handler& operator= (const Handler& other) = delete;
 
     bool init(zmq::context_t* in_ctx, const QVariantMap& in_params);
     void cleanup();
@@ -32,36 +38,37 @@ public:
     bool isValid() const;
 
     // properties ...
-    zmq::context_t* zmqCtx() const;
-    QVariantMap params() const;
+    QStringList defaultCallbacks() const;
 
 public slots:
     void start();
     void stop();
-    void registerCallback(const QString &in_name, IM2QtHandlerCallback in_callback);
+    void registerCallback(const QString &in_name, HandlerCallback in_callback);
 
     // properties ...
-    void setZmqCtx(zmq::context_t* p_zmq_ctx);
-    void setParams(QVariantMap params);
+    void setDefaultCallbacks(QStringList default_callbacks);
 
 private slots:
-    void handleParserResults(const Message& in_data);
+    void handleParserResults(const Request& in_data);
+    void updateDefCallbacks(QStringList default_callbacks);
 
 signals:
     void signalStarted();
     void signalStopped();
 
     // properties ...
-    void signalZmqCtxChanged(zmq::context_t* p_zmq_ctx);
-    void signalParamsChanged(QVariantMap params);
+    void signalDefaultCallbacksChanged(QStringList default_callbacks);
 
 private:
+    using UserCallback = std::tuple<QString, HandlerCallback>;
+
     bool m_initialized = false;
     QSharedPointer<ServerConnection> m_p_server_con;
     QSharedPointer<MessageParser> m_p_parser;
-    IM2QtHandlerCallback m_callback;
-    zmq::context_t* m_p_zmq_ctx;
-    QVariantMap m_params;
+    QStringList m_default_callbacks;
+    QVector<HandlerCallback> m_def_callbacks;
+    QVector<UserCallback> m_user_callbacks;
+    QFutureWatcher<void> m_poll_watcher;
 };
 
 } // namespace
