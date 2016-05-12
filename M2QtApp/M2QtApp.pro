@@ -5,7 +5,7 @@ QT += network
 QT += websockets
 
 CONFIG += c++11
-CONFIG += homeoffice
+#DEFINES += homeoffice
 
 TARGET = M2QtApp
 CONFIG += console
@@ -42,7 +42,7 @@ DESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET     #copy .
 DLLDESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET  #copy .dll file
 
 windows {
-    CONFIG(homeoffice) {
+    contains(DEFINES, homeoffice) {
         SODIUM_DIR = c:/MyTools/ZeroMQ/libsodium
         ZMQ_DIR = c:/MyTools/ZeroMQ/libzmq
         CPP_ZMQ_DIR = c:/MyTools/ZeroMQ/cppzmq

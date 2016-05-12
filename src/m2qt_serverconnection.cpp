@@ -12,6 +12,13 @@ ServerConnection::ServerConnection(QObject *in_parent) : QObject(in_parent)
 
 ServerConnection::~ServerConnection()
 {
+    if (m_p_pub_sock != nullptr)
+    {
+        int time = 0;
+        m_p_pub_sock->setsockopt(ZMQ_LINGER, &time, sizeof(time));
+        delete m_p_pub_sock;
+        m_p_pub_sock = nullptr;
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -74,19 +81,17 @@ void ServerConnection::poll()
     if (m_initialized == false) return;
 
     // init connections ...
-    QScopedPointer<zmq::socket_t> tmp_pull_sock(new zmq::socket_t(*m_p_zmq_ctx, ZMQ_PULL));
-    if (tmp_pull_sock.isNull()) return;
-
-    zmq::socket_t* pull_sock = tmp_pull_sock.take();
+    qDebug() << "ServerConnection::poll - pull addr:" << m_pull_addr.data();
+    zmq::socket_t* pull_sock = new zmq::socket_t(*m_p_zmq_ctx, ZMQ_PULL);
     pull_sock->connect(m_pull_addr.data());
 
     // init poller ...
     zmq::message_t msg;
     zmq::pollitem_t items [] = {
-        { pull_sock, 0, ZMQ_POLLIN, 0 }
+        { *pull_sock, 0, ZMQ_POLLIN, 0 }
     };
 
-    // set running-flag and ... BANZAIIII
+    // set running-flag and ... BANZAIIII!!!
     m_running.testAndSetRelaxed(0, 1);
     qDebug() << "ServerConnection::poll -" << ((m_running.load() == 1) ? "starting ..." : "error ...");
 
@@ -135,25 +140,17 @@ void ServerConnection::send(const Response &in_rep)
     qDebug() << "ServerConnection::send";
     if (m_initialized == false) return;
 
-    static zmq::socket_t* pub_sock = nullptr;
-    if (pub_sock == nullptr)
+    if (m_p_pub_sock == nullptr)
     {
-        pub_sock = new zmq::socket_t(*m_p_zmq_ctx, ZMQ_PUB);
-        if (pub_sock == nullptr) return;
+        m_p_pub_sock = new zmq::socket_t(*m_p_zmq_ctx, ZMQ_PUB);
+        if (m_p_pub_sock == nullptr) return;
 
-        pub_sock->setsockopt(ZMQ_IDENTITY, m_sender_id.data(), m_sender_id.length());
-        pub_sock->connect(m_pub_addr.data());
+        m_p_pub_sock->connect(m_pub_addr.data());
     }
 
     zmq::message_t msg = toZmqMessage(in_rep);
-    bool ret = pub_sock->send(msg);
-
-    int time = 0;
-    if (pub_sock)
-    {
-        pub_sock->setsockopt(ZMQ_LINGER, &time, sizeof(time));
-        delete pub_sock;
-    }
+    bool ret = m_p_pub_sock->send(msg);
+    qDebug() << "ServerConnection::send - zmq ret:" << ret;
 }
 
 // ----------------------------------------------------------------------------

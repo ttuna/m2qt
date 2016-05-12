@@ -11,7 +11,7 @@ QT += websockets
 QT += concurrent
 
 CONFIG += c++11
-CONFIG += homeoffice
+#DEFINES += homeoffice
 
 TARGET = m2qt
 TEMPLATE = lib
@@ -38,14 +38,12 @@ windows {
     }
 
     LINKAGE = dynamic
-
-    message($$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET/$$LINKAGE)
 }
 
 INCLUDE_DIR = $$PWD/../include
 
 windows {
-    CONFIG(homeoffice) {
+    contains(DEFINES, homeoffice) {
         SODIUM_DIR = c:/MyTools/ZeroMQ/libsodium
         ZMQ_DIR = c:/MyTools/ZeroMQ/libzmq
         CPP_ZMQ_DIR = c:/MyTools/ZeroMQ/cppzmq
@@ -75,6 +73,6 @@ windows {
 DESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET     #copy .lib file
 DLLDESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET  #copy .dll file
 
-include(m2qt.pri)
-
 HEADERS += $$INCLUDE_DIR/m2qt.h
+
+include(m2qt.pri)

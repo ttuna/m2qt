@@ -1,7 +1,7 @@
 ﻿#include "m2qt_handler.h"
 #include "m2qt_serverconnection.h"
 #include "m2qt_messageparser.h"
-#include "m2qt_defaultcallbacks.h"
+#include "m2qt_callback.h"
 
 #include <QDebug>
 
@@ -97,6 +97,7 @@ void Handler::handleParserResults(const Request &msg)
         rep = callback(msg);
         if (isRepEmpty(rep)) continue;
 
+        Sleep(10);
         m_p_server_con->send(rep);
     }
 

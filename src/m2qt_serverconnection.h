@@ -55,8 +55,8 @@ private:
     QByteArray m_pull_addr;
     QByteArray m_sender_id;
     zmq::context_t* m_p_zmq_ctx = nullptr;
+    zmq::socket_t* m_p_pub_sock = nullptr;
 //    zmq::socket_t* m_p_pull_sock = nullptr;
-//    zmq::socket_t* m_p_pub_sock = nullptr;
     QAtomicInt m_running = 0;
 };
 
