@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QMap>
+#include <QVector>
 #include <QtCore/qglobal.h>
 
 #if defined(Q_OS_WIN)
@@ -23,16 +24,46 @@
 
 namespace M2QT {
 
-using NetString = std::tuple<quint32, QByteArray>;                                  // size : data
+// Mongrel2 NetString   // size | data
+using NetString = std::tuple<quint32, QByteArray>;
 enum NetStringIdx {SIZE=0, DATA};
 
-using Request = std::tuple<QByteArray, QByteArray, QByteArray, QList<NetString>>;   // uuid : id : path : netstrings
+// Mongrel2 Request     // uuid | id | path | netstrings
+using Request = std::tuple<QByteArray, QByteArray, QByteArray, QVector<NetString>>;
 enum RequestIdx {REQ_UUID=0, REQ_ID, REQ_PATH, REQ_NETSTRINGS};
 
-using Response = std::tuple<QByteArray, QByteArray, QByteArray>;                    // uuid : (size(id):id) : body
+// TODO: change second item to NetString ...
+// Mongrel2 Response    // uuid | (size(id):id) | body
+using Response = std::tuple<QByteArray, QByteArray, QByteArray>;
 enum ResponseIdx {REP_UUID=0, REP_ID, REP_BODY};
 
+// Prototye of handler callback ...
 typedef Response (*HandlerCallback)(const Request&);
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+
+// ----------------------------------------------------------------------------
+//
+// class M2QtSignalAgent
+//
+// ----------------------------------------------------------------------------
+class M2QTSHARED_EXPORT M2QtSignalAgent final : public QObject
+{
+    Q_OBJECT
+public:
+    M2QtSignalAgent() = default;
+    ~M2QtSignalAgent() = default;
+    M2QtSignalAgent(const M2QtSignalAgent& other) = delete;
+    M2QtSignalAgent& operator= (const M2QtSignalAgent& other) = delete;
+
+signals:
+    void signalError(QString error) const;
+    void signalWarning(QString warning) const;
+    void signalDebug(QString debug) const;
+    void signalInfo(QString info) const;
+};
 
 // ----------------------------------------------------------------------------
 //
@@ -44,10 +75,14 @@ class M2QTSHARED_EXPORT IM2Qt : public QObject
 public:
     virtual ~IM2Qt() = default;
     virtual bool isValid() const = 0;
+    virtual void setSignalAgent(const M2QtSignalAgent* in_signal_agent) = 0;
     virtual bool createHandler(const QString& in_name, const QVariantMap &in_params) = 0;
     virtual void startHandler(const QString& in_name = QString()) const = 0;
     virtual void stopHandler(const QString& in_name = QString()) const = 0;
-    virtual void addHandlerCallback(const QString& in_name, HandlerCallback in_callback) const = 0;
+    virtual bool addHandlerCallback(const QString& in_handler_name, const QString& in_callback_name, HandlerCallback in_callback) const = 0;
+
+//signals:
+    virtual void signalError(QString error) const = 0;
 };
 
 // ----------------------------------------------------------------------------

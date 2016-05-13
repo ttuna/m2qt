@@ -1,4 +1,5 @@
 ﻿#include "controller.h"
+#include <QMessageLogger>
 #include <QDebug>
 
 using namespace M2QT;
@@ -20,6 +21,9 @@ bool Controller::init(const QVariantMap &in_params)
 
     m_p_m2qt = M2QtLoader::getM2Qt();
     if (m_p_m2qt == nullptr) return false;
+
+    // TODO: ...
+    //connect(m_p_m2qt, &IM2Qt::signalError, this, &Controller::printMessage);
 
     m_initialized = true;
     return true;
@@ -81,4 +85,13 @@ void Controller::stopHandler(const QString &in_name /*=QString()*/)
 {
     if (m_initialized == false) return;
     m_p_m2qt->stopHandler(in_name);
+}
+
+// ----------------------------------------------------------------------------
+// printMessage
+// ----------------------------------------------------------------------------
+void Controller::printMessage(const QString &in_msg)
+{
+    // TODO: add decent logger here ...
+    QMessageLogger().debug(in_msg.toLatin1());
 }

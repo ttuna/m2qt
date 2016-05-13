@@ -25,17 +25,15 @@ class MessageParser : public QObject
 public:
     explicit MessageParser(QObject *parent = 0);
 
-    static QJsonObject getJson(const NetString &in_netstring);
-
 signals:
-    void signalError(QString error_msg) const;
+    void signalError(QString error) const;
     void signalResult(Request msg) const;
 
 public slots:
     Request parse(const QByteArray &in_data) const;
 
 private:
-    static QList<NetString> getNetStrings(const QByteArray &in_data);
+    static QVector<NetString> getNetStrings(const QByteArray &in_data);
 
 };
 

@@ -21,23 +21,25 @@ Request MessageParser::parse(const QByteArray &in_data) const   // TODO: make th
         return Request();
     }
 
-    const QList<QByteArray> token_list = in_data.split(' ');
+    char separator = ' ';
+    QByteArrayList token_list = in_data.split(separator);
     if (token_list.isEmpty())
     {
         emit signalError(QLatin1String("MessageParser::parse - Token list is empty!"));
         return Request();
     }
-    else if (token_list.count() != 4)
+    else if (token_list.count() < 4)
     {
         emit signalError(QLatin1String("MessageParser::parse - Token list mismatch!"));
         return Request();
     }
 
-    QByteArray uuid(token_list[0]);
-    QByteArray id(token_list[1]);
-    QByteArray path(token_list[2]);
+    QByteArray uuid(token_list.takeFirst());
+    QByteArray id(token_list.takeFirst());
+    QByteArray path(token_list.takeFirst());
 
-    QList<NetString> net_strings = getNetStrings(token_list[3]);
+
+    QVector<NetString> net_strings = getNetStrings(token_list.join(separator));
     if (net_strings.size() < 1)
     {
         emit signalError(QLatin1String("MessageParser::parse - No message data available!"));
@@ -52,12 +54,14 @@ Request MessageParser::parse(const QByteArray &in_data) const   // TODO: make th
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-QList<NetString> MessageParser::getNetStrings(const QByteArray &in_data)
+QVector<NetString> MessageParser::getNetStrings(const QByteArray &in_data)
 {
-    if (in_data.isEmpty()) return QList<NetString>();
+    if (in_data.isEmpty()) return QVector<NetString>();
+
+    // TODO: find some reasonable checks to verify that in_data is valid (e.g. contains some NetStrings) ...
 
     // NetString: <length>:<data> ...
-    QList<NetString> net_strings;
+    QVector<NetString> net_strings;
     net_strings.reserve(10); // meaningful? and if so what's a good number ... ?!?
 
     int pos = 0;
@@ -68,37 +72,20 @@ QList<NetString> MessageParser::getNetStrings(const QByteArray &in_data)
     while (true)
     {
         sep = in_data.indexOf(':', pos);
-        if (sep < 0) return QList<NetString>();
+        if (sep < 0) return QVector<NetString>();
 
         left = in_data.mid(pos, sep-pos);
         len = left.toInt(&ok);
-        if (ok == false) return QList<NetString>();
+        if (ok == false) return QVector<NetString>();
 
         right = in_data.mid(sep+1, len);
-        if (right.isEmpty()) return QList<NetString>();
+        if (right.isEmpty()) return QVector<NetString>();
 
-        net_strings.append(std::make_tuple(len, right));
+        net_strings.push_back(std::make_tuple(len, right));
         pos += (sep+1 + right.length() + 1); // +1 to step over the ',' seperator ...
 
         if (pos >= in_data.length()) break;
     }
 
     return net_strings;
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-QJsonObject MessageParser::getJson(const NetString &in_netstring)
-{
-    quint32 size = std::get<NetStringIdx::SIZE>(in_netstring);
-    if (size == 0) return QJsonObject();
-    QByteArray data = std::get<NetStringIdx::DATA>(in_netstring);
-    if (data.isEmpty()) return QJsonObject();
-
-    QJsonDocument jdoc = QJsonDocument::fromJson(data);
-    if (jdoc.isEmpty()) return QJsonObject();
-
-    QJsonObject jobj = jdoc.object();
-    return jobj;
 }

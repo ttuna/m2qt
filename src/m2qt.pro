@@ -11,7 +11,7 @@ QT += websockets
 QT += concurrent
 
 CONFIG += c++11
-DEFINES += homeoffice
+#DEFINES += homeoffice
 
 TARGET = m2qt
 TEMPLATE = lib

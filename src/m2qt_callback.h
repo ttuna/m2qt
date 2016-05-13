@@ -10,6 +10,8 @@
 
 namespace M2QT {
 
+class CallbackHelper;
+
 // ----------------------------------------------------------------------------
 //
 // class DefaultCallbacks
@@ -25,12 +27,38 @@ public:
     DefaultCallbacks& operator= (const DefaultCallbacks& other) = delete;
 
     static QVector<HandlerCallback> getCallbacks(const QStringList &in_names);
+
 signals:
+    void signalError(QString error) const;
 
 public slots:
 
 private:
+    CallbackHelper* m_p_static_cb_helper = nullptr;
     static QMap<QString, HandlerCallback> m_callback_map;
+};
+
+// ----------------------------------------------------------------------------
+//
+// class CallbackHelper
+//
+// ----------------------------------------------------------------------------
+class CallbackHelper final : public QObject
+{
+    Q_OBJECT
+public:
+    CallbackHelper() = default;
+    ~CallbackHelper() = default;
+    CallbackHelper(const CallbackHelper& other) = delete;
+    CallbackHelper& operator= (const CallbackHelper& other) = delete;
+
+signals:
+    void signalError(QString error);
+
+public slots:
+
+private:
+
 };
 
 } // namespace

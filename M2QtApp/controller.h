@@ -26,6 +26,9 @@ public slots:
     void startHandler(const QString &in_name = QString());
     void stopHandler(const QString &in_name = QString());
 
+private slots:
+    void printMessage(const QString &in_msg);
+
 private:
     bool m_initialized = false;
     M2QT::IM2Qt* m_p_m2qt;

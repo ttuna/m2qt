@@ -23,7 +23,7 @@ Handler::~Handler()
 // ----------------------------------------------------------------------------
 // init
 // ----------------------------------------------------------------------------
-bool Handler::init(zmq::context_t *in_ctx, const QVariantMap &in_params)
+bool Handler::init(const QString &in_name, zmq::context_t *in_ctx, const QVariantMap &in_params)
 {
     qDebug() << "Handler::init";
     if (in_ctx == nullptr) return false;
@@ -47,6 +47,7 @@ bool Handler::init(zmq::context_t *in_ctx, const QVariantMap &in_params)
 
     connect(this, &Handler::signalDefaultCallbacksChanged, this, &Handler::updateDefCallbacks);
 
+    m_name = in_name;
     m_initialized = true;
     return true;
 }
@@ -87,7 +88,7 @@ bool Handler::isValid() const
 void Handler::handleParserResults(const Request &msg)
 {
     if (m_initialized == false) return;
-    if (isReqEmpty(msg) == true) return;
+    if (M2QT::isReqEmpty(msg) == true) return;
 
     Response rep;
 
@@ -95,9 +96,8 @@ void Handler::handleParserResults(const Request &msg)
     foreach (HandlerCallback callback, m_def_callbacks)
     {
         rep = callback(msg);
-        if (isRepEmpty(rep)) continue;
+        if (M2QT::isRepEmpty(rep)) continue;
 
-        Sleep(10);
         m_p_server_con->send(rep);
     }
 
@@ -105,7 +105,7 @@ void Handler::handleParserResults(const Request &msg)
     foreach (UserCallback callback, m_user_callbacks)
     {
         rep = (std::get<1>(callback)(msg));
-        if (isRepEmpty(rep)) continue;
+        if (M2QT::isRepEmpty(rep)) continue;
 
         m_p_server_con->send(rep);
     }
@@ -154,6 +154,11 @@ void Handler::updateDefCallbacks(QStringList default_callbacks)
 // ----------------------------------------------------------------------------
 // Properties ...
 // ----------------------------------------------------------------------------
+QString Handler::name() const
+{
+    return m_name;
+}
+
 QStringList Handler::defaultCallbacks() const
 {
     return m_default_callbacks;
