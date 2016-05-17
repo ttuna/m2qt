@@ -10,15 +10,18 @@
 
 namespace M2QT {
 
-
 // ----------------------------------------------------------------------------
-// getJson
+// getHeader
 // ----------------------------------------------------------------------------
-static QJsonObject getJson(const NetString &in_netstring)
+static QJsonObject getHeader(const QVector<NetString> &in_netstrings)
 {
-    quint32 size = std::get<NetStringIdx::SIZE>(in_netstring);
+    if (in_netstrings.isEmpty()) return QJsonObject();
+    NetString header = in_netstrings[0];
+
+    quint32 size = std::get<NetStringIdx::SIZE>(header);
     if (size == 0) return QJsonObject();
-    QByteArray data = std::get<NetStringIdx::DATA>(in_netstring);
+
+    QByteArray data = std::get<NetStringIdx::DATA>(header);
     if (data.isEmpty()) return QJsonObject();
 
     QJsonDocument jdoc = QJsonDocument::fromJson(data);

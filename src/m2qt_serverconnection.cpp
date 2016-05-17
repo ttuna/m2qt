@@ -12,13 +12,7 @@ ServerConnection::ServerConnection(QObject *in_parent) : QObject(in_parent)
 
 ServerConnection::~ServerConnection()
 {
-    if (m_p_pub_sock != nullptr)
-    {
-        int time = 0;
-        m_p_pub_sock->setsockopt(ZMQ_LINGER, &time, sizeof(time));
-        delete m_p_pub_sock;
-        m_p_pub_sock = nullptr;
-    }
+    cleanup();
 }
 
 // ----------------------------------------------------------------------------
@@ -27,13 +21,28 @@ ServerConnection::~ServerConnection()
 bool ServerConnection::init(zmq::context_t* in_zmq_ctx, const QVariantMap& in_params)
 {
     qDebug() << "ServerConnection::init";
-    if (in_zmq_ctx == nullptr) return false;
+    if (in_zmq_ctx == nullptr) { emit signalError("ServerConnection::init - zmq_context == nullptr!"); return false; }
+    if (update(in_params) == false) { emit signalError("ServerConnection::init - update() failed!"); return false; }
 
-    if (update(in_params) == false) return false;
     m_p_zmq_ctx = in_zmq_ctx;
-
     m_initialized = true;
     return true;
+}
+
+// ----------------------------------------------------------------------------
+// cleanup
+// ----------------------------------------------------------------------------
+void ServerConnection::cleanup()
+{
+    if (m_p_pub_sock != nullptr)
+    {
+        int time = 0;
+        m_p_pub_sock->setsockopt(ZMQ_LINGER, &time, sizeof(time));
+        delete m_p_pub_sock;
+        m_p_pub_sock = nullptr;
+    }
+
+    m_initialized = false;
 }
 
 // ----------------------------------------------------------------------------
@@ -78,11 +87,7 @@ bool ServerConnection::isValid() const
 void ServerConnection::poll()
 {
     qDebug() << "ServerConnection::poll";
-    if (m_initialized == false)
-    {
-        emit signalError(QLatin1String("ServerConnection::poll - ServerConnection not initialized!"));
-        return;
-    }
+    if (m_initialized == false) { emit signalError(QLatin1String("ServerConnection::poll - ServerConnection not initialized!")); return; }
 
     // init connections ...
     qDebug() << "ServerConnection::poll - pull addr:" << m_pull_addr.data();
@@ -97,11 +102,11 @@ void ServerConnection::poll()
 
     // set running-flag and ... BANZAIIII!!!
     m_running.testAndSetRelaxed(0, 1);
+    emit signalStartPolling();
     qDebug() << "ServerConnection::poll -" << ((m_running.load() == 1) ? "starting ..." : "error ...");
 
     while (m_running.load()) {
         zmq::poll(&items[0], 1, -1);
-
         if (items[0].revents & ZMQ_POLLIN)
         {
             pull_sock->recv(&msg);
@@ -134,40 +139,34 @@ void ServerConnection::poll()
 void ServerConnection::stop()
 {
     qDebug() << "ServerConnection::stop";
-    if (m_initialized == false)
-    {
-        emit signalError(QLatin1String("ServerConnection::stop - ServerConnection not initialized!"));
-        return;
-    }
+    if (m_initialized == false) { emit signalError(QLatin1String("ServerConnection::stop - ServerConnection not initialized!")); return; }
 
     // reset running-flag ...
-    m_running.testAndSetRelaxed(1, 0);
     qDebug() << "ServerConnection::stop() -:" << ((m_running.load() == 0) ? "stopping ..." : "error ...");
+    m_running.testAndSetRelaxed(1, 0);
+    emit signalStopPolling();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void ServerConnection::send(const Response &in_rep)
+void ServerConnection::send(const QByteArray &in_data)
 {
     qDebug() << "ServerConnection::send";
-    if (m_initialized == false)
-    {
-        emit signalError(QLatin1String("ServerConnection::send - ServerConnection not initialized!"));
-        return;
-    }
+    if (m_initialized == false) { emit signalError(QLatin1String("ServerConnection::send - ServerConnection not initialized!")); return; }
 
+    // create static socket if not done until yet ...
     if (m_p_pub_sock == nullptr)
     {
         m_p_pub_sock = new zmq::socket_t(*m_p_zmq_ctx, ZMQ_PUB);
         if (m_p_pub_sock == nullptr) return;
 
+        qDebug() << "ServerConnection::send - socket created ...";
         m_p_pub_sock->connect(m_pub_addr.data());
     }
 
-    QString msg_str = to<QString>(in_rep);
-    qDebug() << "ServerConnection::send - Sending:\n" << msg_str;
-    zmq::message_t msg = to<zmq::message_t>(in_rep);
+    qDebug() << "ServerConnection::send - msg:\n" << in_data;
+    zmq::message_t msg(in_data.data(), in_data.size());
     bool ret = m_p_pub_sock->send(msg);
     qDebug() << "ServerConnection::send - zmq ret:" << ret << endl << endl;
 }

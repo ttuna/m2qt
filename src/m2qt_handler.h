@@ -33,7 +33,7 @@ public:
     Handler(const Handler& other) = delete;
     Handler& operator= (const Handler& other) = delete;
 
-    bool init(const QString &in_name, zmq::context_t* in_ctx, const QVariantMap& in_params);
+    bool init(const QString &in_name, zmq::context_t* in_zmq_ctx, const QVariantMap& in_params);
     void cleanup();
     bool update(const QVariantMap& in_params);
     bool isValid() const;
@@ -45,13 +45,13 @@ public:
 public slots:
     void start();
     void stop();
-    void registerCallback(const QString &in_name, HandlerCallback in_callback);
+    bool registerCallback(const QString &in_name, HandlerCallback in_callback);
 
     // properties ...
     void setDefaultCallbacks(QStringList default_callbacks);
 
 private slots:
-    void handleParserResults(const Request& in_data);
+    void handleParserResults(const Request& in_req);
     void updateDefCallbacks(QStringList default_callbacks);
 
 signals:

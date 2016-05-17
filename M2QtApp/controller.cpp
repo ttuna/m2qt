@@ -5,11 +5,16 @@
 using namespace M2QT;
 
 // ----------------------------------------------------------------------------
-// isValid
+// ctor / dtor ...
 // ----------------------------------------------------------------------------
 Controller::Controller(QObject *parent) : QObject(parent)
 {
 
+}
+
+Controller::~Controller()
+{
+    cleanup();
 }
 
 // ----------------------------------------------------------------------------
@@ -22,8 +27,11 @@ bool Controller::init(const QVariantMap &in_params)
     m_p_m2qt = M2QtLoader::getM2Qt();
     if (m_p_m2qt == nullptr) return false;
 
-    // TODO: ...
-    //connect(m_p_m2qt, &IM2Qt::signalError, this, &Controller::printMessage);
+    m_p_signal_agent = new M2QtSignalAgent();
+    if (m_p_signal_agent == nullptr) return false;
+
+    m_p_m2qt->setMsgPrefix("ws_msg");
+    m_p_m2qt->setSignalAgent(m_p_signal_agent);
 
     m_initialized = true;
     return true;
@@ -34,7 +42,12 @@ bool Controller::init(const QVariantMap &in_params)
 // ----------------------------------------------------------------------------
 void Controller::cleanup()
 {
-
+    if (m_p_signal_agent != nullptr)
+    {
+        m_p_m2qt->setSignalAgent(nullptr);
+        delete m_p_signal_agent;
+        m_p_signal_agent = nullptr;
+    }
 }
 
 // ----------------------------------------------------------------------------

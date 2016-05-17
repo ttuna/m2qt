@@ -27,9 +27,11 @@ public:
     ~ServerConnection();
 
     bool init(zmq::context_t* in_zmq_ctx, const QVariantMap &in_params);
+    void cleanup();
     bool update(const QVariantMap &in_params);
     bool isValid() const;
 
+    // properties ...
     QByteArray pubAddr() const;
     QByteArray pullAddr() const;
     QByteArray senderId() const;
@@ -37,14 +39,20 @@ public:
 public slots:
     void poll();
     void stop();
-    void send(const Response &in_rep);
+    void send(const QByteArray &in_data);
+
+    // properties ...
     void setPubAddr(QByteArray pub_addr);
     void setPullAddr(QByteArray pull_addr);
     void setSenderId(QByteArray sender_id);
 
 signals:
     void signalError(QString error);    // TODO: use it ...
+    void signalStartPolling();
+    void signalStopPolling();
     void signalNewMessage(QByteArray data);
+
+    // properties ...
     void signalPubAddrChanged(QByteArray pub_addr);
     void signalPullAddrChanged(QByteArray pull_addr);
     void signalSenderIdChanged(QByteArray sender_id);

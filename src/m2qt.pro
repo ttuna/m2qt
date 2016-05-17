@@ -11,7 +11,8 @@ QT += websockets
 QT += concurrent
 
 CONFIG += c++11
-#DEFINES += homeoffice
+DEFINES += homeoffice
+DEFINES += ENABLE_DEV_CALLBACKS
 
 TARGET = m2qt
 TEMPLATE = lib

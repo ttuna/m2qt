@@ -53,7 +53,10 @@ public:
     CallbackHelper& operator= (const CallbackHelper& other) = delete;
 
 signals:
-    void signalError(QString error);
+    void signalError(QString error) const;
+    void signalWarning(QString warning) const;
+    void signalDebug(QString debug) const;
+    void signalInfo(QString info) const;
 
 public slots:
 

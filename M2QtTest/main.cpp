@@ -5,6 +5,8 @@
 
 #include "websockethelper.h"
 
+const QString msg_prefix = "@ws_msg";
+
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
@@ -17,7 +19,7 @@ int main(int argc, char *argv[])
 
     QVariantMap params;
     // template for json messages
-    params["msg_template"] = QString("@ws_msg {\"type\":%1, \"data\":%2} \0");
+    params["msg_template"] = QString("@ws_msg {\"type\":\"%1\", \"data\":\"%2\"} \0");
 
     WebSocketHelper web_socket_helper;
     if (web_socket_helper.init(params) == false) return -1;

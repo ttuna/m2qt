@@ -75,14 +75,18 @@ class M2QTSHARED_EXPORT IM2Qt : public QObject
 public:
     virtual ~IM2Qt() = default;
     virtual bool isValid() const = 0;
-    virtual void setSignalAgent(const M2QtSignalAgent* in_signal_agent) = 0;
     virtual bool createHandler(const QString& in_name, const QVariantMap &in_params) = 0;
     virtual void startHandler(const QString& in_name = QString()) const = 0;
     virtual void stopHandler(const QString& in_name = QString()) const = 0;
-    virtual bool addHandlerCallback(const QString& in_handler_name, const QString& in_callback_name, HandlerCallback in_callback) const = 0;
+    virtual void addHandlerCallback(const QString& in_callback_name, HandlerCallback in_callback) const = 0;
+    virtual void setMsgPrefix(QByteArray msg_prefix) = 0;
+    virtual void setSignalAgent(M2QtSignalAgent* in_signal_agent) = 0;
 
 //signals:
     virtual void signalError(QString error) const = 0;
+    virtual void signalWarning(QString warning) const = 0;
+    virtual void signalDebug(QString debug) const = 0;
+    virtual void signalInfo(QString info) const = 0;
 };
 
 // ----------------------------------------------------------------------------

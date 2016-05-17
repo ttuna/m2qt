@@ -5,14 +5,16 @@
 #include <QVariant>
 #include <QVector>
 #include <QMap>
+#include <QSharedPointer>
 
 #include <m2qt.h>
 
-class Controller : public QObject
+class Controller final : public QObject
 {
     Q_OBJECT
 public:
     explicit Controller(QObject *parent = 0);
+    ~Controller();
 
     bool init(const QVariantMap& in_params);
     void cleanup();
@@ -32,6 +34,7 @@ private slots:
 private:
     bool m_initialized = false;
     M2QT::IM2Qt* m_p_m2qt;
+    M2QT::M2QtSignalAgent* m_p_signal_agent = nullptr;
     QVector<QString> m_handler_names;
 };
 

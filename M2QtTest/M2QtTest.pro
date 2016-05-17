@@ -5,7 +5,7 @@ QT += network
 QT += websockets
 
 CONFIG += c++11
-#DEFINES += homeoffice
+DEFINES += homeoffice
 
 message($$CONFIG)
 
