@@ -1,5 +1,6 @@
 ﻿#include "websockethelper.h"
 #include <windows.h>
+
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
@@ -18,11 +19,18 @@ bool WebSocketHelper::init(const QVariantMap &in_params)
 
     if (update(in_params) == false) return false;
 
-    QObject::connect(m_p_web_sock, &QWebSocket::connected, this, &WebSocketHelper::slotOnConnected);
-    QObject::connect(m_p_web_sock, &QWebSocket::disconnected, this, &WebSocketHelper::slotOnDisconnected);
-    QObject::connect(m_p_web_sock, &QWebSocket::stateChanged, this, &WebSocketHelper::slotOnStateChanged);
-    QObject::connect(m_p_web_sock, static_cast<void(QWebSocket::*)(QAbstractSocket::SocketError)>(&QWebSocket::error), this, &WebSocketHelper::slotOnError);
-    QObject::connect(m_p_web_sock, &QWebSocket::textMessageReceived, this, &WebSocketHelper::slotOnTextMessage);
+    m_ping_timer.setTimerType(Qt::VeryCoarseTimer);
+    m_ping_timer.setInterval(15000);
+
+    connect(m_p_web_sock, &QWebSocket::connected, this, &WebSocketHelper::slotOnConnected);
+    connect(m_p_web_sock, &QWebSocket::disconnected, this, &WebSocketHelper::slotOnDisconnected);
+    connect(m_p_web_sock, &QWebSocket::stateChanged, this, &WebSocketHelper::slotOnStateChanged);
+    connect(m_p_web_sock, static_cast<void(QWebSocket::*)(QAbstractSocket::SocketError)>(&QWebSocket::error), this, &WebSocketHelper::slotOnError);
+    connect(m_p_web_sock, &QWebSocket::textMessageReceived, this, &WebSocketHelper::slotOnTextMessage);
+    connect(m_p_web_sock, &QWebSocket::pong, this, &WebSocketHelper::slotOnPong);
+    connect(&m_ping_timer, &QTimer::timeout, this, &WebSocketHelper::slotPing);
+
+    m_ping_timer.start();
 
     m_initialized = true;
     return true;
@@ -61,7 +69,7 @@ bool WebSocketHelper::isValid() const
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void WebSocketHelper::connect(const QUrl &in_url)
+void WebSocketHelper::socketConnect(const QUrl &in_url)
 {
     if (m_initialized == false) return;
     if (in_url.isEmpty()) return;
@@ -127,6 +135,24 @@ void WebSocketHelper::slotOnError(QAbstractSocket::SocketError error)
 void WebSocketHelper::slotOnTextMessage(const QString &message)
 {
     qDebug() << "WebSocketHelper::slotOnTextMessage:" << message;
+}
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+void WebSocketHelper::slotPing()
+{
+    if (m_initialized == false) return;
+    if (m_p_web_sock->state() != QAbstractSocket::ConnectedState) return;
+
+    qDebug() << "WebSocketHelper::slotPing - send ping to server";
+    m_p_web_sock->ping();
+}
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+void WebSocketHelper::slotOnPong(quint64 elapsedTime, const QByteArray &payload)
+{
+    qDebug() << "WebSocketHelper::slotPong:" << elapsedTime << payload;
 }
 
 // ----------------------------------------------------------------------------

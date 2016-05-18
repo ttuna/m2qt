@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 
     WebSocketHelper web_socket_helper;
     if (web_socket_helper.init(params) == false) return -1;
-    web_socket_helper.connect(url);
+    web_socket_helper.socketConnect(url);
 
     return a.exec();
 }

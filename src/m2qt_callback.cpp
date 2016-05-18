@@ -38,7 +38,7 @@ Response DebugOutput(const Request &in_message)
     debug_stream << "\tnetstring entries:" << net_strings.count() << endl;
 
     debug_stream << "\n\tJson header:" << endl;
-    QJsonObject jobj = M2QT::getHeader(net_strings);
+    QJsonObject jobj = M2QT::getJsonHeader(net_strings);
     QJsonObject::const_iterator iter = jobj.constBegin();
     for ( ;iter!=jobj.constEnd(); ++iter )
     {
@@ -74,7 +74,7 @@ Response WebsocketHandshake(const Request &in_message)
     QVector<NetString> net_strings = std::get<REQ_NETSTRINGS>(in_message);
 
     // get HEADER - first NetString must be the header obj ...
-    QJsonObject jobj = M2QT::getHeader(net_strings);
+    QJsonObject jobj = M2QT::getJsonHeader(net_strings);
     if (jobj.isEmpty()) { emit helper->signalError(QStringLiteral("WebsocketHandshake - No header available!")); return Response(); }
 
     // get METHOD ...
@@ -120,7 +120,7 @@ Response Echo(const Request &in_message)
     QVector<NetString> net_strings = std::get<REQ_NETSTRINGS>(in_message);
 
     // get HEADER - first NetString must be the header obj ...
-    QJsonObject jobj = M2QT::getHeader(net_strings);
+    QJsonObject jobj = M2QT::getJsonHeader(net_strings);
     if (jobj.isEmpty()) { emit helper->signalError(QStringLiteral("Echo - No header available!")); return Response(); }
 
     // get METHOD ...
@@ -130,16 +130,22 @@ Response Echo(const Request &in_message)
     // must be "WEBSOCKET" ...
     if (val.toString() != QLatin1String("WEBSOCKET")) return Response();
 
-    int test = 1<<16;
-    qDebug() << "TEST:" << test;
-
-    QByteArray response_data = "HTTP/1.1 202 Accepted\r\n"; // TODO
+    QByteArray response_data;
     for (int i = 0; i<net_strings.size(); ++i)
     {
-        response_data += std::get<NS_DATA>(net_strings[i]) + "\r\n";
+        response_data += std::get<NS_DATA>(net_strings[i]);
     }
 
-    response_data.append("\r\n\r\n");
+    QByteArray header = M2QT::getWebSocketHeader(response_data.size(), 0x01, 0x00);
+
+    response_data.prepend(header);
+
+//    std::string test_header_1 = M2QT::websocket_header(65537, 0x01, 0x00);
+//    qDebug() << "TEST1:" << QByteArray::fromStdString(test_header_1);
+
+//    QByteArray test_data(65537, 'x');
+//    QByteArray test_header_2 = M2QT::getWebSocketHeader(test_data.size(), 0x01, 0x0);
+//    qDebug() << "TEST2:" << test_header_2;
 
     // build len(id):len ...
     QByteArray id_and_len = QByteArray::number(id.size()) + ':' + id;

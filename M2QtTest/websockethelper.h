@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QVariant>
+#include <QTimer>
 #include <QWebSocket>
 
 // ----------------------------------------------------------------------------
@@ -23,7 +24,7 @@ public:
     bool update(const QVariantMap &in_params);
     bool isValid() const;
 
-    void connect(const QUrl &in_url);
+    void socketConnect(const QUrl &in_url);
     void send(const QByteArray &in_type, const QByteArray &in_data);
 
     // properties ...
@@ -42,6 +43,8 @@ public slots:
     void slotOnStateChanged(QAbstractSocket::SocketState state);
     void slotOnError(QAbstractSocket::SocketError error);
     void slotOnTextMessage(const QString &message);
+    void slotPing();
+    void slotOnPong(quint64 elapsedTime, const QByteArray &payload);
 
     // properties ...
     void setMsgTemplate(QString msg_template);
@@ -51,5 +54,6 @@ private:
     bool m_ws_connected = false;
     QWebSocket* m_p_web_sock = nullptr;
     QString m_msg_template;
+    QTimer m_ping_timer;
 };
 #endif // WEBSOCKETHELPER_H
