@@ -1,6 +1,4 @@
 ﻿#include "m2qt_handler.h"
-#include "m2qt_serverconnection.h"
-#include "m2qt_messageparser.h"
 #include "m2qt_callback.h"
 
 #include <QDebug>
@@ -30,24 +28,6 @@ bool Handler::init(const QString &in_name, zmq::context_t *in_zmq_ctx, const QVa
     if (in_params.isEmpty()) { emit signalError("Handler::init - Parameter map is empty"); return false; }
     if (update(in_params) == false) { emit signalError("Handler::init - update() failed!"); return false; }
 
-    QScopedPointer<ServerConnection> tmp_server_con(new ServerConnection);
-    if (tmp_server_con.isNull()) { emit signalError("Handler::init - Couldn't allocate ServerConnection!"); return false; }
-    if (tmp_server_con->init(in_zmq_ctx, in_params) == false) { emit signalError("Handler::init - ServerConnection initialisation failed!"); return false; }
-
-    QScopedPointer<MessageParser> tmp_msg_parser(new MessageParser);
-    if (tmp_msg_parser.isNull()) { emit signalError("Handler::init - Couldn't allocate MessageParser!"); return false; }
-
-    m_p_server_con = QSharedPointer<ServerConnection>(tmp_server_con.take());
-    m_p_parser = QSharedPointer<MessageParser>(tmp_msg_parser.take());
-
-    connect(m_p_server_con.data(), &ServerConnection::signalNewMessage, m_p_parser.data(), &MessageParser::parse);
-    connect(m_p_parser.data(), &MessageParser::signalResult, this, &Handler::handleParserResults);
-
-    if (m_default_callbacks.isEmpty() == false)
-        m_def_callbacks = DefaultCallbacks::getCallbacks(m_default_callbacks);
-
-    connect(this, &Handler::signalDefaultCallbacksChanged, this, &Handler::updateDefCallbacks);
-
     m_name = in_name;
     m_initialized = true;
     return true;
@@ -58,8 +38,8 @@ bool Handler::init(const QString &in_name, zmq::context_t *in_zmq_ctx, const QVa
 // ----------------------------------------------------------------------------
 void Handler::cleanup()
 {
-    m_default_callbacks = QStringList();
     m_name = QString();
+    m_callback = HandlerCallback();
     m_initialized = false;
 }
 
@@ -68,11 +48,13 @@ void Handler::cleanup()
 // ----------------------------------------------------------------------------
 bool Handler::update(const QVariantMap& in_params)
 {
-    if (in_params.contains("default_callbacks"))
+    if (in_params.contains("default_callback"))
     {
-        m_default_callbacks = in_params["default_callbacks"].toStringList();
-        qDebug() << "Handler::update - default_callbacks:" << m_default_callbacks;
+        QString def_callback = in_params["default_callback"].toString();
+        m_callback = DefaultCallbackManager::getCallback(def_callback);
+        qDebug() << "Handler::update - default_callback:" << def_callback;
     }
+
     return true;
 }
 
@@ -95,70 +77,30 @@ void Handler::handleParserResults(const Request &in_req)
     Response rep;
     QByteArray msg;
 
-    // I. default callbacks ...
-    foreach (HandlerCallback callback, m_def_callbacks)
-    {
-        rep = callback(in_req);
-        if (M2QT::isRepEmpty(rep)) continue;
-        msg = to<QByteArray>(rep);
-        m_p_server_con->send(msg);
-    }
+    rep = m_callback(in_req);
+    if (M2QT::isRepEmpty(rep)) return;
 
-    // II. user callbacks ...
-    foreach (UserCallback callback, m_user_callbacks)
-    {
-        rep = (std::get<1>(callback)(in_req));
-        if (M2QT::isRepEmpty(rep)) continue;
-        msg = to<QByteArray>(rep);
-        m_p_server_con->send(msg);
-    }
-}
-
-// ----------------------------------------------------------------------------
-// start
-// ----------------------------------------------------------------------------
-void Handler::start()
-{
-    if (m_initialized == false) { emit signalError("Handler::start - Handler not initialized!"); return; }
-
-    // send first INIT msg ...
-    qDebug() << "Handler::start - send init msg" << m_p_server_con->senderId();
-    m_p_server_con->send(m_p_server_con->senderId());
-
-    QFuture<void> poll_future = QtConcurrent::run(m_p_server_con.data(), &ServerConnection::poll);
-    m_poll_watcher.setFuture(poll_future);  // TODO: ...
-
-    emit signalStarted();
-}
-
-// ----------------------------------------------------------------------------
-// stop
-// ----------------------------------------------------------------------------
-void Handler::stop()
-{
-    if (m_initialized == false) { emit signalError("Handler::stop - Handler not initialized!"); return; }
-    m_p_server_con->stop();
-    emit signalStopped();
+    msg = to<QByteArray>(rep);
+    emit signalSendMsg(msg);
 }
 
 // ----------------------------------------------------------------------------
 // registerCallback
 // ----------------------------------------------------------------------------
-bool Handler::registerCallback(const QString &in_name, HandlerCallback in_callback)
+bool Handler::setCallback(HandlerCallback in_callback)
 {
     if (m_initialized == false) { emit signalError("Handler::registerCallback - Handler not initialized!"); return false; }
-    if (in_name.isEmpty()) { emit signalError("Handler::registerCallback - Callback name is empty!"); return false; }
 
-    m_user_callbacks.push_back(std::make_tuple(in_name, in_callback));
+    m_callback = in_callback;
     return true;
 }
 
 // ----------------------------------------------------------------------------
 // updateDefCallbacks
 // ----------------------------------------------------------------------------
-void Handler::updateDefCallbacks(QStringList default_callbacks)
+void Handler::updateDefCallbacks(QString default_callbacks)
 {
-    m_def_callbacks = DefaultCallbacks::getCallbacks(default_callbacks);
+
 }
 
 // ----------------------------------------------------------------------------
@@ -169,16 +111,16 @@ QString Handler::name() const
     return m_name;
 }
 
-QStringList Handler::defaultCallbacks() const
+QByteArray Handler::msgPrefix() const
 {
-    return m_default_callbacks;
+    return m_msg_prefix;
 }
 
-void Handler::setDefaultCallbacks(QStringList default_callbacks)
+void Handler::setMsgPrefix(QByteArray msg_prefix)
 {
-    if (m_default_callbacks == default_callbacks)
+    if (m_msg_prefix == msg_prefix)
         return;
 
-    m_default_callbacks = default_callbacks;
-    emit signalDefaultCallbacksChanged(default_callbacks);
+    m_msg_prefix = msg_prefix;
+    emit signalMsgPrefixChanged(msg_prefix);
 }

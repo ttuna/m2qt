@@ -5,7 +5,7 @@ QT += network
 QT += websockets
 
 CONFIG += c++11
-DEFINES += homeoffice
+#DEFINES += homeoffice
 
 TARGET = M2QtApp
 CONFIG += console
@@ -59,7 +59,8 @@ SOURCES += main.cpp \
     controller.cpp
 
 HEADERS += \
-    controller.h
+    controller.h \
+    $$INCLUDE_DIR/m2qt.h
 
 INCLUDEPATH += \
     $$INCLUDE_DIR \

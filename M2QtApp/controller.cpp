@@ -1,4 +1,6 @@
 ﻿#include "controller.h"
+#include "m2qt.h"
+
 #include <QMessageLogger>
 #include <QDebug>
 
@@ -24,13 +26,17 @@ bool Controller::init(const QVariantMap &in_params)
 {
     if (update(in_params) == false) return false;
 
-    m_p_m2qt = M2QtLoader::getM2Qt();
+    m_p_m2qt = M2QtLoader::getM2Qt(in_params);
     if (m_p_m2qt == nullptr) return false;
 
-    m_p_signal_agent = new M2QtSignalAgent();
+    m_p_signal_agent = M2QtLoader::getSignalAgent();
     if (m_p_signal_agent == nullptr) return false;
 
-    m_p_m2qt->setMsgPrefix("ws_msg");
+    connect(m_p_signal_agent, &SignalAgent::signalError, this, &Controller::slotError);
+    connect(m_p_signal_agent, &SignalAgent::signalWarning, this, &Controller::slotWarning);
+    connect(m_p_signal_agent, &SignalAgent::signalDebug, this, &Controller::slotDebug);
+    connect(m_p_signal_agent, &SignalAgent::signalInfo, this, &Controller::slotInfo);
+
     m_p_m2qt->setSignalAgent(m_p_signal_agent);
 
     m_initialized = true;
@@ -83,21 +89,21 @@ bool Controller::createHandler(const QString &in_name, const QVariantMap &in_par
 }
 
 // ----------------------------------------------------------------------------
-// startHandler
+// start
 // ----------------------------------------------------------------------------
-void Controller::startHandler(const QString &in_name /*=QString()*/)
+void Controller::start()
 {
     if (m_initialized == false) return;
-    m_p_m2qt->startHandler(in_name);
+    m_p_m2qt->start();
 }
 
 // ----------------------------------------------------------------------------
-// stopHandler
+// stop
 // ----------------------------------------------------------------------------
-void Controller::stopHandler(const QString &in_name /*=QString()*/)
+void Controller::stop()
 {
     if (m_initialized == false) return;
-    m_p_m2qt->stopHandler(in_name);
+    m_p_m2qt->stop();
 }
 
 // ----------------------------------------------------------------------------
@@ -107,4 +113,27 @@ void Controller::printMessage(const QString &in_msg)
 {
     // TODO: add decent logger here ...
     QMessageLogger().debug(in_msg.toLatin1());
+}
+
+// ----------------------------------------------------------------------------
+// Signal Agent slots ...
+// ----------------------------------------------------------------------------
+void Controller::slotError(QString in_msg)
+{
+    QMessageLogger().critical(in_msg.toLatin1());
+}
+
+void Controller::slotWarning(QString in_msg)
+{
+    QMessageLogger().warning(in_msg.toLatin1());
+}
+
+void Controller::slotDebug(QString in_msg)
+{
+    QMessageLogger().debug(in_msg.toLatin1());
+}
+
+void Controller::slotInfo(QString in_msg)
+{
+    QMessageLogger().info(in_msg.toLatin1());
 }

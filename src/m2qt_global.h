@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QByteArray>
 #include <QVariant>
+#include <QVector>
 #include <zmq.hpp>
 
 namespace M2QT {
@@ -18,10 +19,10 @@ static QJsonObject getHeader(const QVector<NetString> &in_netstrings)
     if (in_netstrings.isEmpty()) return QJsonObject();
     NetString header = in_netstrings[0];
 
-    quint32 size = std::get<NetStringIdx::SIZE>(header);
+    quint32 size = std::get<NS_SIZE>(header);
     if (size == 0) return QJsonObject();
 
-    QByteArray data = std::get<NetStringIdx::DATA>(header);
+    QByteArray data = std::get<NS_DATA>(header);
     if (data.isEmpty()) return QJsonObject();
 
     QJsonDocument jdoc = QJsonDocument::fromJson(data);

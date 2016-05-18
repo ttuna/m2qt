@@ -1,12 +1,11 @@
 ﻿#include <QCoreApplication>
-#include "controller.h"
 #include <QDebug>
+
+#include "controller.h"
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-
-    QStringList default_callbacks{QLatin1String("debug_output"), QLatin1String("websocket_handshake"), QLatin1String("echo")};
 
     QVariantMap params;
     // zmq pull socket address - messages from mongrel2 server ...
@@ -15,14 +14,25 @@ int main(int argc, char *argv[])
     params[QLatin1String("pub_addr")] = QByteArray("tcp://127.0.0.1:9998");
     // mongrel2 push socket id = server uuid in mongrel2 config ...
     params[QLatin1String("sender_id")] = QByteArray("f400bf85-4538-4f7a-8908-67e313d515c2");
-    // default callbacks
-    params[QLatin1String("default_callbacks")] = default_callbacks;
 
     Controller controller;
-    QString handler_name(QLatin1String("web_socket_handler"));
     controller.init(params);
-    controller.createHandler(handler_name, params);
-    controller.startHandler(handler_name);
+
+    QVariantMap handler_params;
+    // debug output handler
+    handler_params.clear();
+    handler_params[QLatin1String("default_callback")] = QLatin1String("debug_output");
+    controller.createHandler(QLatin1String("debug_output"), handler_params);
+    // websocket handshake handler
+    handler_params.clear();
+    handler_params[QLatin1String("default_callback")] = QLatin1String("websocket_handshake");
+    controller.createHandler(QLatin1String("websocket_handshake"), handler_params);
+    // echo handler
+    handler_params.clear();
+    handler_params[QLatin1String("default_callback")] = QLatin1String("echo");
+    controller.createHandler(QLatin1String("echo"), handler_params);
+
+    controller.start();
 
     qDebug() << "\nstarting Main Event Loop ...\n";
     return a.exec();

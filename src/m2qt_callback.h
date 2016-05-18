@@ -14,22 +14,25 @@ class CallbackHelper;
 
 // ----------------------------------------------------------------------------
 //
-// class DefaultCallbacks
+// class DefaultCallbackManager
 //
 // ----------------------------------------------------------------------------
-class DefaultCallbacks final : public QObject
+class DefaultCallbackManager final : public QObject
 {
     Q_OBJECT
 public:
-    explicit DefaultCallbacks(QObject *parent = 0);
-    ~DefaultCallbacks() = default;
-    DefaultCallbacks(const DefaultCallbacks& other) = delete;
-    DefaultCallbacks& operator= (const DefaultCallbacks& other) = delete;
+    explicit DefaultCallbackManager(QObject *parent = 0);
+    ~DefaultCallbackManager() = default;
+    DefaultCallbackManager(const DefaultCallbackManager& other) = delete;
+    DefaultCallbackManager& operator= (const DefaultCallbackManager& other) = delete;
 
-    static QVector<HandlerCallback> getCallbacks(const QStringList &in_names);
+    static HandlerCallback getCallback(const QString &in_name);
 
 signals:
     void signalError(QString error) const;
+    void signalWarning(QString warning) const;
+    void signalDebug(QString debug) const;
+    void signalInfo(QString info) const;
 
 public slots:
 

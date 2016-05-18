@@ -3,6 +3,7 @@
 
 #include <QCryptographicHash>
 #include <QJsonObject>
+#include <QTextStream>
 #include <QDebug>
 
 using namespace M2QT;
@@ -27,30 +28,38 @@ Response DebugOutput(const Request &in_message)
     QByteArray path = std::get<REQ_PATH>(in_message);
     QVector<NetString> net_strings = std::get<REQ_NETSTRINGS>(in_message);
 
-    qDebug() << "\n-------------------------";
-    qDebug() << "DebugOutput:\n";
-    qDebug() << "\tuuid:" << uuid;
-    qDebug() << "\tid:" << id;
-    qDebug() << "\tpath:" << path;
-    qDebug() << "\tnetstring entries:" << net_strings.count();
+    QByteArray debug_msg;
+    QTextStream debug_stream(&debug_msg);
+    debug_stream << "\n-------------------------" << endl;
+    debug_stream << "DebugOutput:\n" << endl;
+    debug_stream << "\tuuid:" << uuid << endl;
+    debug_stream << "\tid:" << id << endl;
+    debug_stream << "\tpath:" << path << endl;
+    debug_stream << "\tnetstring entries:" << net_strings.count() << endl;
 
-    qDebug() << "\n\tJson header:";
+    debug_stream << "\n\tJson header:" << endl;
     QJsonObject jobj = M2QT::getHeader(net_strings);
     QJsonObject::const_iterator iter = jobj.constBegin();
     for ( ;iter!=jobj.constEnd(); ++iter )
     {
-        qDebug() << "\t\t" << left << iter.key() << ":" << iter.value();
+        debug_stream << "\t\t" << left << iter.key() << ":" << iter.value().toString() << endl;
     }
 
-    qDebug() << "\n\tPayload:";
+    debug_stream << "\n\tPayload:" << endl;
     for(int i = 1; i<net_strings.size(); ++i)
     {
-        NetString ns = net_strings[i];
-        qDebug() << "\t\t" << std::get<NetStringIdx::SIZE>(ns) << ":" << std::get<NetStringIdx::DATA>(ns);
+        debug_stream << "\t\t"
+                     << std::get<NS_SIZE>(net_strings[i])
+                     << ":"
+                     << std::get<NS_DATA>(net_strings[i])
+                     << endl;
     }
 
-    qDebug() << "-------------------------\n";
+    debug_stream << "-------------------------\n" << endl;
 
+    // remove \0 chars from debug_msg ...
+    debug_msg.replace('\0', "");
+    helper->signalDebug(QLatin1String(debug_msg));
     return Response();
 }
 
@@ -66,18 +75,18 @@ Response WebsocketHandshake(const Request &in_message)
 
     // get HEADER - first NetString must be the header obj ...
     QJsonObject jobj = M2QT::getHeader(net_strings);
-    if (jobj.isEmpty()) { emit helper->signalError("WebsocketHandshake - No header available!"); return Response(); }
+    if (jobj.isEmpty()) { emit helper->signalError(QStringLiteral("WebsocketHandshake - No header available!")); return Response(); }
 
     // get METHOD ...
     QJsonValue val = jobj.value(QLatin1String("METHOD"));
-    if (val.isUndefined()) { emit helper->signalError("WebsocketHandshake - Couldn't find METHOD header!"); return Response(); }
+    if (val.isUndefined()) { emit helper->signalError(QStringLiteral("WebsocketHandshake - Couldn't find METHOD header!")); return Response(); }
 
     // must be "WEBSOCKET_HANDSHAKE" ...
-    if (val.toString() != QLatin1String("WEBSOCKET_HANDSHAKE")) { emit helper->signalError("WebsocketHandshake - METHOD != WEBSOCKET_HANDSHAKE!"); return Response(); }
+    if (val.toString() != QLatin1String("WEBSOCKET_HANDSHAKE")) return Response();
 
     // get SEC-WEBSOCKET-KEY ...
     val = jobj.value("sec-websocket-key");
-    if (val.isUndefined()) { emit helper->signalError("WebsocketHandshake - Couldn't find SEC-WEBSOCKET-KEY header!"); return Response(); }
+    if (val.isUndefined()) { emit helper->signalError(QStringLiteral("WebsocketHandshake - Couldn't find SEC-WEBSOCKET-KEY header!")); return Response(); }
 
     // TEST ...
     // TODO: put this into unit test ...
@@ -112,20 +121,25 @@ Response Echo(const Request &in_message)
 
     // get HEADER - first NetString must be the header obj ...
     QJsonObject jobj = M2QT::getHeader(net_strings);
-    if (jobj.isEmpty()) { emit helper->signalError("Echo - No header available!"); return Response(); }
+    if (jobj.isEmpty()) { emit helper->signalError(QStringLiteral("Echo - No header available!")); return Response(); }
 
     // get METHOD ...
     QJsonValue val = jobj.value(QLatin1String("METHOD"));
-    if (val.isUndefined()){ emit helper->signalError("Echo - Couldn't find METHOD header!"); return Response(); }
+    if (val.isUndefined()){ emit helper->signalError(QStringLiteral("Echo - Couldn't find METHOD header!")); return Response(); }
 
     // must be "WEBSOCKET" ...
-    if (val.toString() != QLatin1String("WEBSOCKET")) { emit helper->signalError("Echo - METHOD != WEBSOCKET!"); return Response(); }
+    if (val.toString() != QLatin1String("WEBSOCKET")) return Response();
 
-    QByteArray response_data = "HTTP/1.1 202 Accepted\r\n" // TODO
+    int test = 1<<16;
+    qDebug() << "TEST:" << test;
+
+    QByteArray response_data = "HTTP/1.1 202 Accepted\r\n"; // TODO
     for (int i = 0; i<net_strings.size(); ++i)
     {
-        response_data += std::get<1>(net_strings[i]) + "\r\n";
+        response_data += std::get<NS_DATA>(net_strings[i]) + "\r\n";
     }
+
+    response_data.append("\r\n\r\n");
 
     // build len(id):len ...
     QByteArray id_and_len = QByteArray::number(id.size()) + ':' + id;
@@ -152,7 +166,7 @@ Response HeavyDuty(const Request &in_message)
 // class DefaultCallbacks
 //
 // ----------------------------------------------------------------------------
-QMap<QString, HandlerCallback> DefaultCallbacks::m_callback_map =
+QMap<QString, HandlerCallback> DefaultCallbackManager::m_callback_map =
 {
     { "debug_output", &DebugOutput },
     { "websocket_handshake", &WebsocketHandshake },
@@ -165,27 +179,22 @@ QMap<QString, HandlerCallback> DefaultCallbacks::m_callback_map =
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-DefaultCallbacks::DefaultCallbacks(QObject *parent) : QObject(parent)
+DefaultCallbackManager::DefaultCallbackManager(QObject *parent) : QObject(parent)
 {
     m_p_static_cb_helper = helper;
     if (m_p_static_cb_helper != nullptr)
     {
-        connect(m_p_static_cb_helper, &CallbackHelper::signalError, this, &DefaultCallbacks::signalError);
+        connect(m_p_static_cb_helper, &CallbackHelper::signalError, this, &DefaultCallbackManager::signalError);
+        connect(m_p_static_cb_helper, &CallbackHelper::signalWarning, this, &DefaultCallbackManager::signalWarning);
+        connect(m_p_static_cb_helper, &CallbackHelper::signalDebug, this, &DefaultCallbackManager::signalDebug);
+        connect(m_p_static_cb_helper, &CallbackHelper::signalInfo, this, &DefaultCallbackManager::signalInfo);
     }
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-QVector<HandlerCallback> DefaultCallbacks::getCallbacks(const QStringList &in_names)
+HandlerCallback DefaultCallbackManager::getCallback(const QString &in_name)
 {
-    QVector<HandlerCallback> ret;
-
-    foreach (QString name, in_names)
-    {
-        if (m_callback_map.contains(name) == false) continue;
-        ret.push_back(m_callback_map.value(name));
-    }
-
-    return ret;
+    return m_callback_map.value(in_name, HandlerCallback());
 }

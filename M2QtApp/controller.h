@@ -7,7 +7,10 @@
 #include <QMap>
 #include <QSharedPointer>
 
-#include <m2qt.h>
+namespace M2QT {
+    class IM2Qt;
+    class SignalAgent;
+}
 
 class Controller final : public QObject
 {
@@ -25,8 +28,13 @@ signals:
 
 public slots:
     bool createHandler(const QString &in_name, const QVariantMap &in_params);
-    void startHandler(const QString &in_name = QString());
-    void stopHandler(const QString &in_name = QString());
+    void start();
+    void stop();
+
+    void slotError(QString in_msg);
+    void slotWarning(QString in_msg);
+    void slotDebug(QString in_msg);
+    void slotInfo(QString in_msg);
 
 private slots:
     void printMessage(const QString &in_msg);
@@ -34,7 +42,7 @@ private slots:
 private:
     bool m_initialized = false;
     M2QT::IM2Qt* m_p_m2qt;
-    M2QT::M2QtSignalAgent* m_p_signal_agent = nullptr;
+    M2QT::SignalAgent* m_p_signal_agent = nullptr;
     QVector<QString> m_handler_names;
 };
 

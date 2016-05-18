@@ -70,7 +70,7 @@ void WebSocketHelper::connect(const QUrl &in_url)
     ws_req.setRawHeader(QByteArray("Origin"), QByteArray("http://").append(in_url.host().toLatin1()));
 
     qDebug() << "WebSocketHelper::connect - NetworkRequest url:" << ws_req.url();
-    qDebug() << "WebSocketHelper::connect \tOrigin:" << ws_req.rawHeader(QByteArray("Origin"));
+    qDebug() << "WebSocketHelper::connect \tOrigin:" << ws_req.rawHeader(QByteArray("Origin")) << endl;
 
     m_p_web_sock->open(ws_req);
 }

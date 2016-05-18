@@ -8,7 +8,6 @@
 #include <QVariant>
 #include <QVector>
 #include <QSharedPointer>
-#include <QtConcurrent>
 
 #include <zmq.hpp>
 
@@ -26,7 +25,8 @@ class Handler final : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QString name READ name)
-    Q_PROPERTY(QStringList default_callbacks READ defaultCallbacks WRITE setDefaultCallbacks NOTIFY signalDefaultCallbacksChanged)
+    Q_PROPERTY(QByteArray msg_prefix READ msgPrefix WRITE setMsgPrefix NOTIFY signalMsgPrefixChanged)
+
 public:
     explicit Handler(QObject* parent = nullptr);
     ~Handler();
@@ -40,39 +40,31 @@ public:
 
     // properties ...
     QString name() const;
-    QStringList defaultCallbacks() const;
+    QString callback() const;
+    QByteArray msgPrefix() const;
 
 public slots:
-    void start();
-    void stop();
-    bool registerCallback(const QString &in_name, HandlerCallback in_callback);
+    bool setCallback(HandlerCallback in_callback);
+    void handleParserResults(const Request& in_req);
 
     // properties ...
-    void setDefaultCallbacks(QStringList default_callbacks);
+    void setMsgPrefix(QByteArray msg_prefix);
 
 private slots:
-    void handleParserResults(const Request& in_req);
-    void updateDefCallbacks(QStringList default_callbacks);
+    void updateDefCallbacks(QString callback);
 
 signals:
     void signalError(QString error) const; // TODO: use it ..
-    void signalStarted() const;
-    void signalStopped() const;
+    void signalSendMsg(QByteArray msg) const;
 
     // properties ...
-    void signalDefaultCallbacksChanged(QStringList default_callbacks);
+    void signalMsgPrefixChanged(QByteArray msg_prefix);
 
 private:
-    using UserCallback = std::tuple<QString, HandlerCallback>;
-
     bool m_initialized = false;
     QString m_name;
-    QSharedPointer<ServerConnection> m_p_server_con;
-    QSharedPointer<MessageParser> m_p_parser;
-    QStringList m_default_callbacks;
-    QVector<HandlerCallback> m_def_callbacks;
-    QVector<UserCallback> m_user_callbacks;
-    QFutureWatcher<void> m_poll_watcher;
+    HandlerCallback m_callback;
+    QByteArray m_msg_prefix;    // TODO: use it ...
 };
 
 } // namespace

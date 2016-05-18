@@ -2,8 +2,7 @@
 #define M2QT_H
 
 #include <QObject>
-#include <QMap>
-#include <QVector>
+#include <QVariant>
 #include <QtCore/qglobal.h>
 
 #if defined(Q_OS_WIN)
@@ -26,7 +25,7 @@ namespace M2QT {
 
 // Mongrel2 NetString   // size | data
 using NetString = std::tuple<quint32, QByteArray>;
-enum NetStringIdx {SIZE=0, DATA};
+enum NetStringIdx {NS_SIZE=0, NS_DATA};
 
 // Mongrel2 Request     // uuid | id | path | netstrings
 using Request = std::tuple<QByteArray, QByteArray, QByteArray, QVector<NetString>>;
@@ -46,23 +45,26 @@ typedef Response (*HandlerCallback)(const Request&);
 
 // ----------------------------------------------------------------------------
 //
-// class M2QtSignalAgent
+// class SignalAgent
 //
 // ----------------------------------------------------------------------------
-class M2QTSHARED_EXPORT M2QtSignalAgent final : public QObject
+class M2QTSHARED_EXPORT SignalAgent final : public QObject
 {
     Q_OBJECT
 public:
-    M2QtSignalAgent() = default;
-    ~M2QtSignalAgent() = default;
-    M2QtSignalAgent(const M2QtSignalAgent& other) = delete;
-    M2QtSignalAgent& operator= (const M2QtSignalAgent& other) = delete;
+    explicit SignalAgent(QObject* in_parent = nullptr);
+    ~SignalAgent() = default;
+    SignalAgent(const SignalAgent& other) = delete;
+    SignalAgent& operator= (const SignalAgent& other) = delete;
 
 signals:
     void signalError(QString error) const;
     void signalWarning(QString warning) const;
     void signalDebug(QString debug) const;
     void signalInfo(QString info) const;
+
+private:
+    bool m_dummy = false;
 };
 
 // ----------------------------------------------------------------------------
@@ -76,11 +78,10 @@ public:
     virtual ~IM2Qt() = default;
     virtual bool isValid() const = 0;
     virtual bool createHandler(const QString& in_name, const QVariantMap &in_params) = 0;
-    virtual void startHandler(const QString& in_name = QString()) const = 0;
-    virtual void stopHandler(const QString& in_name = QString()) const = 0;
-    virtual void addHandlerCallback(const QString& in_callback_name, HandlerCallback in_callback) const = 0;
-    virtual void setMsgPrefix(QByteArray msg_prefix) = 0;
-    virtual void setSignalAgent(M2QtSignalAgent* in_signal_agent) = 0;
+    virtual void start() = 0;
+    virtual void stop() = 0;
+    virtual void setHandlerCallback(const QString &in_handler_name, const QString &in_callback_name, HandlerCallback in_callback) const = 0;
+    virtual void setSignalAgent(SignalAgent* in_signal_agent) = 0;
 
 //signals:
     virtual void signalError(QString error) const = 0;
@@ -102,7 +103,8 @@ public:
     M2QtLoader(const M2QtLoader& other) = delete;
     M2QtLoader& operator= (const M2QtLoader& other) = delete;
 
-    M2QTSHARED_EXPORT static M2QT::IM2Qt *getM2Qt();
+    M2QTSHARED_EXPORT static M2QT::IM2Qt *getM2Qt(const QVariantMap &in_params = QVariantMap());
+    M2QTSHARED_EXPORT static M2QT::SignalAgent *getSignalAgent();
 };
 
 } // namespace M2QT
