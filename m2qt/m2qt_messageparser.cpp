@@ -27,7 +27,8 @@ Request MessageParser::parse(const QByteArray &in_data) const   // TODO: make th
     QByteArray path(token_list.takeFirst());
 
     QVector<NetString> net_strings = getNetStrings(token_list.join(separator));
-    if (net_strings.size() < 1) { emit signalError(QLatin1String("MessageParser::parse - No message data available!")); return Request(); }
+    // Don't skip empty messages - e.g. pings just MAY have application data ...
+    //if (net_strings.size() < 1) { emit signalError(QLatin1String("MessageParser::parse - No message data available!")); return Request(); }
 
     Request result = std::make_tuple(uuid, id, path, net_strings);
     emit signalResult(result);
@@ -53,14 +54,14 @@ QVector<NetString> MessageParser::getNetStrings(const QByteArray &in_data)
     while (true)
     {
         sep = in_data.indexOf(':', pos);
-        if (sep < 0) return QVector<NetString>();
+        if (sep < 0) break;
 
         left = in_data.mid(pos, sep-pos);
         len = left.toInt(&ok);
         if (ok == false) return QVector<NetString>();
 
         right = in_data.mid(sep+1, len);
-        if (right.isEmpty()) return QVector<NetString>();
+        if (right.isEmpty()) break;
 
         net_strings.push_back(std::make_tuple(len, right));
         pos += (sep+1 + right.length() + 1); // +1 to step over the ',' seperator ...

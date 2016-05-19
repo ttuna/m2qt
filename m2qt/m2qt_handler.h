@@ -40,21 +40,22 @@ public:
 
     // properties ...
     QString name() const;
-    QString callback() const;
     QByteArray msgPrefix() const;
 
 public slots:
-    bool setCallback(HandlerCallback in_callback);
+    bool setHandlerCallback(HandlerCallback in_callback);
+    bool setFilterCallback(FilterCallback in_callback);
     void handleParserResults(const Request& in_req);
 
     // properties ...
     void setMsgPrefix(QByteArray msg_prefix);
 
-private slots:
-    void updateDefCallbacks(QString callback);
-
 signals:
     void signalError(QString error) const; // TODO: use it ..
+    void signalWarning(QString warning) const;
+    void signalDebug(QString debug) const;
+    void signalInfo(QString info) const;
+
     void signalSendMsg(QByteArray msg) const;
 
     // properties ...
@@ -63,7 +64,8 @@ signals:
 private:
     bool m_initialized = false;
     QString m_name;
-    HandlerCallback m_callback;
+    HandlerCallback m_handler_callback = nullptr;
+    FilterCallback m_filter_callback = nullptr;
     QByteArray m_msg_prefix;    // TODO: use it ...
 };
 

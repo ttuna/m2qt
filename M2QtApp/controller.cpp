@@ -61,6 +61,7 @@ void Controller::cleanup()
 // ----------------------------------------------------------------------------
 bool Controller::update(const QVariantMap &in_params)
 {
+    Q_UNUSED(in_params)
     return true;
 }
 

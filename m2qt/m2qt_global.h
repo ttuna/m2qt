@@ -66,31 +66,15 @@ static QByteArray getWebSocketHeader(const quint64& in_data_size, const quint8 i
     return header;
 }
 
-static std::string websocket_header(size_t data_size, char opcode, char rsvd) {
-    std::ostringstream header;
-    header.put(0x80|opcode|rsvd<<4);
-    char dummyLength;
-    size_t realLength=data_size;
-    if (realLength < 126) {
-        dummyLength = static_cast<char>(realLength);
-    } else if (realLength < 1<<16) {
-        dummyLength = 126;
-    } else {
-        dummyLength = 127;
-    }
-    header.put(dummyLength);
-    if (dummyLength == 127) {
-        header.put(realLength >> 56 & 0xff);
-        header.put(realLength >> 48 & 0xff);
-        header.put(realLength >> 40 & 0xff);
-        header.put(realLength >> 32 & 0xff);
-        header.put(realLength >> 24 & 0xff);
-        header.put(realLength >> 16 & 0xff);
-    } if (dummyLength == 126 || dummyLength == 127) {
-        header.put(realLength >> 8 & 0xff);
-        header.put(realLength & 0xff);
-    }
-    return header.str();
+// ----------------------------------------------------------------------------
+// getHTTPHeader - see https://tools.ietf.org/html/rfc2616 for more information ...
+// ----------------------------------------------------------------------------
+static QByteArray getHTTPHeader(const QVector<NetString> &in_headers, const quint32 &in_status_code, const QByteArray &in_status)
+{
+    // TODO ...
+    Q_UNUSED(in_headers)
+    Q_UNUSED(in_status_code)
+    Q_UNUSED(in_status)
 }
 
 // ----------------------------------------------------------------------------
@@ -114,6 +98,8 @@ static QJsonObject getJsonHeader(const QVector<NetString> &in_netstrings)
     return jobj;
 }
 
+
+
 // ----------------------------------------------------------------------------
 // isReqEmpty
 // ----------------------------------------------------------------------------
@@ -121,6 +107,7 @@ static bool isReqEmpty(const Request &in_msg)
 {
     return (in_msg == Request());
 }
+
 // ----------------------------------------------------------------------------
 // isRepEmpty
 // ----------------------------------------------------------------------------
@@ -135,9 +122,13 @@ static bool isRepEmpty(const Response &in_msg)
 template <typename T>
 static T to(const Response &in_msg)
 {
-    QByteArray uuid, id_and_len, data;
-    std::tie(uuid, id_and_len, data) = in_msg;
-    QVariant rep_data = uuid + ' ' + id_and_len + ',' + ' ' + data;
+    NetString id;
+    quint32 id_len;
+    QByteArray uuid, data, id_data;
+    std::tie(uuid, id, data) = in_msg;
+    std::tie(id_len, id_data) = id;
+
+    QVariant rep_data = uuid + ' ' + QByteArray::number(id_len) + ':' + id_data + ',' + ' ' + data;
     if (rep_data.canConvert<T>() == true)
         return rep_data.value<T>();
     else
@@ -150,9 +141,13 @@ static T to(const Response &in_msg)
 template <>
 static zmq::message_t to<zmq::message_t>(const Response &in_msg)
 {
-    QByteArray uuid, id_and_len, data;
-    std::tie(uuid, id_and_len, data) = in_msg;
-    QByteArray rep_data = uuid + ' ' + id_and_len + ',' + ' ' + data;
+    NetString id;
+    quint32 id_len;
+    QByteArray uuid, data, id_data;
+    std::tie(uuid, id, data) = in_msg;
+    std::tie(id_len, id_data) = id;
+
+    QByteArray rep_data = uuid + ' ' + QByteArray::number(id_len) + ':' + id_data + ',' + ' ' + data;
     zmq::message_t msg(rep_data.data(), rep_data.size());
     return msg;
 }

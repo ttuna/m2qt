@@ -14,22 +14,23 @@ class CallbackHelper;
 
 // ----------------------------------------------------------------------------
 //
-// class DefaultCallbackManager
+// class CallbackManager
 //
 // ----------------------------------------------------------------------------
-class DefaultCallbackManager final : public QObject
+class CallbackManager final : public QObject
 {
     Q_OBJECT
 public:
-    explicit DefaultCallbackManager(QObject *parent = 0);
-    ~DefaultCallbackManager() = default;
-    DefaultCallbackManager(const DefaultCallbackManager& other) = delete;
-    DefaultCallbackManager& operator= (const DefaultCallbackManager& other) = delete;
+    explicit CallbackManager(QObject *parent = 0);
+    ~CallbackManager() = default;
+    CallbackManager(const CallbackManager& other) = delete;
+    CallbackManager& operator= (const CallbackManager& other) = delete;
 
-    static HandlerCallback getCallback(const QString &in_name);
+    static HandlerCallback getHandlerCallback(const QString &in_name);
+    static FilterCallback getFilterCallback(const QString &in_name);
 
 signals:
-    void signalError(QString error) const;
+    void signalError(QString error) const;  // TODO: use it ..
     void signalWarning(QString warning) const;
     void signalDebug(QString debug) const;
     void signalInfo(QString info) const;
@@ -38,7 +39,8 @@ public slots:
 
 private:
     CallbackHelper* m_p_static_cb_helper = nullptr;
-    static QMap<QString, HandlerCallback> m_callback_map;
+    static QMap<QString, HandlerCallback> m_handler_callback_map;
+    static QMap<QString, FilterCallback> m_filter_callback_map;
 };
 
 // ----------------------------------------------------------------------------

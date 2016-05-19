@@ -48,6 +48,10 @@ public slots:
 
 signals:
     void signalError(QString error);    // TODO: use it ...
+    void signalWarning(QString warning) const;
+    void signalDebug(QString debug) const;
+    void signalInfo(QString info) const;
+
     void signalStartPolling();
     void signalStopPolling();
     void signalNewMessage(QByteArray data);

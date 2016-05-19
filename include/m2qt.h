@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QVariant>
 #include <QtCore/qglobal.h>
+#include <functional>
 
 #if defined(Q_OS_WIN)
 #  if !defined(M2QTSHARED_EXPORT) && !defined(M2QTSHARED_IMPORT)
@@ -33,11 +34,14 @@ enum RequestIdx {REQ_UUID=0, REQ_ID, REQ_PATH, REQ_NETSTRINGS};
 
 // TODO: change second item to NetString ...
 // Mongrel2 Response    // uuid | (size(id):id) | body
-using Response = std::tuple<QByteArray, QByteArray, QByteArray>;
+using Response = std::tuple<QByteArray, NetString, QByteArray>;
 enum ResponseIdx {REP_UUID=0, REP_ID, REP_BODY};
 
-// Prototye of handler callback ...
-typedef Response (*HandlerCallback)(const Request&);
+// Prototype of handler callback ...
+using HandlerCallback = std::function<Response(const Request&)>;
+
+// Prototype of handler callback ...
+using FilterCallback = std::function<bool(const Request&)>;
 
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -81,6 +85,7 @@ public:
     virtual void start() = 0;
     virtual void stop() = 0;
     virtual void setHandlerCallback(const QString &in_handler_name, const QString &in_callback_name, HandlerCallback in_callback) const = 0;
+    virtual void setFilterCallback(const QString &in_handler_name, const QString &in_callback_name, FilterCallback in_callback) const = 0;
     virtual void setSignalAgent(SignalAgent* in_signal_agent) = 0;
 
 //signals:

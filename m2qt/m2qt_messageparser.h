@@ -26,7 +26,11 @@ public:
     explicit MessageParser(QObject *parent = 0);
 
 signals:
-    void signalError(QString error) const;
+    void signalError(QString error) const;  // TODO: use it ..
+    void signalWarning(QString warning) const;
+    void signalDebug(QString debug) const;
+    void signalInfo(QString info) const;
+
     void signalResult(Request msg) const;
 
 public slots:

@@ -31,6 +31,10 @@ int main(int argc, char *argv[])
     handler_params.clear();
     handler_params[QLatin1String("default_callback")] = QLatin1String("echo");
     controller.createHandler(QLatin1String("echo"), handler_params);
+    // pong handler
+    handler_params.clear();
+    handler_params[QLatin1String("default_callback")] = QLatin1String("pong");
+    controller.createHandler(QLatin1String("pong"), handler_params);
 
     controller.start();
 

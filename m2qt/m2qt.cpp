@@ -64,6 +64,7 @@ public slots:
     void start() override;
     void stop() override;
     void setHandlerCallback(const QString &in_handler_name, const QString &in_callback_name, HandlerCallback in_callback) const override;
+    void setFilterCallback(const QString &in_handler_name, const QString &in_callback_name, FilterCallback in_callback) const override;
 
     //properties ...
     void setSignalAgent(SignalAgent *in_signal_agent);
@@ -75,7 +76,7 @@ private:
     SignalAgent* m_p_signal_agent = nullptr;
     QSharedPointer<ServerConnection> m_p_server_con;
     QSharedPointer<MessageParser> m_p_parser;
-    QSharedPointer<DefaultCallbackManager> m_p_def_cb_manager;
+    QSharedPointer<CallbackManager> m_p_def_cb_manager;
     QFutureWatcher<void> m_poll_watcher;
 };
 
@@ -109,18 +110,18 @@ bool M2Qt::init(zmq::context_t* in_ctx, const QVariantMap& in_params)
     QScopedPointer<MessageParser> tmp_msg_parser(new MessageParser);
     if (tmp_msg_parser.isNull()) { emit signalError("M2Qt::init - Couldn't allocate MessageParser!"); return false; }
 
-    QScopedPointer<DefaultCallbackManager> tmp_def_cb_manager(new DefaultCallbackManager);
+    QScopedPointer<CallbackManager> tmp_def_cb_manager(new CallbackManager);
     if (tmp_def_cb_manager.isNull()) { emit signalError("M2Qt::init - Couldn't allocate DefaultCallbackManager!"); return false; }
 
     m_p_server_con = QSharedPointer<ServerConnection>(tmp_server_con.take());
     m_p_parser = QSharedPointer<MessageParser>(tmp_msg_parser.take());
-    m_p_def_cb_manager = QSharedPointer<DefaultCallbackManager>(tmp_def_cb_manager.take());
+    m_p_def_cb_manager = QSharedPointer<CallbackManager>(tmp_def_cb_manager.take());
 
     connect(m_p_server_con.data(), &ServerConnection::signalNewMessage, m_p_parser.data(), &MessageParser::parse);
-    connect(m_p_def_cb_manager.data(), &DefaultCallbackManager::signalError, this, &M2Qt::signalError);
-    connect(m_p_def_cb_manager.data(), &DefaultCallbackManager::signalWarning, this, &M2Qt::signalWarning);
-    connect(m_p_def_cb_manager.data(), &DefaultCallbackManager::signalDebug, this, &M2Qt::signalDebug);
-    connect(m_p_def_cb_manager.data(), &DefaultCallbackManager::signalInfo, this, &M2Qt::signalInfo);
+    connect(m_p_def_cb_manager.data(), &CallbackManager::signalError, this, &M2Qt::signalError);
+    connect(m_p_def_cb_manager.data(), &CallbackManager::signalWarning, this, &M2Qt::signalWarning);
+    connect(m_p_def_cb_manager.data(), &CallbackManager::signalDebug, this, &M2Qt::signalDebug);
+    connect(m_p_def_cb_manager.data(), &CallbackManager::signalInfo, this, &M2Qt::signalInfo);
 
     m_p_zmq_ctx = in_ctx;
     m_initialized = true;
@@ -139,7 +140,6 @@ void M2Qt::cleanup()
         qDeleteAll(m_handler_map);
         m_handler_map.clear();
     }
-
     setSignalAgent(nullptr);
     m_p_zmq_ctx = nullptr;
     m_initialized = false;
@@ -150,6 +150,7 @@ void M2Qt::cleanup()
 // ----------------------------------------------------------------------------
 bool M2Qt::update(const QVariantMap& in_params)
 {
+    Q_UNUSED(in_params)
     return true;
 }
 
@@ -190,7 +191,12 @@ bool M2Qt::createHandler(const QString& in_name, const QVariantMap &in_params)
     if (m_initialized == false) { emit signalError("M2Qt::createHandler - M2Qt not initialized!"); return false; }
     if (in_name.isEmpty()) { emit signalError("M2Qt::createHandler - Handler name is empty!"); return false; }
     if (in_params.isEmpty()) { emit signalError("M2Qt::createHandler - Handler params are empty!"); return false; }
-    if (m_handler_map.contains(in_name)) return (m_handler_map.value(in_name, nullptr) != nullptr);
+
+    if (m_handler_map.contains(in_name))
+    {
+        emit signalError("M2Qt::createHandler - Handler already known!");
+        return (m_handler_map.value(in_name, nullptr) != nullptr);
+    }
 
     QScopedPointer<Handler> p_handler(new Handler());
     if (p_handler.isNull()) { emit signalError("M2Qt::createHandler - Couldn't allocate handler!"); return false; }
@@ -201,7 +207,7 @@ bool M2Qt::createHandler(const QString& in_name, const QVariantMap &in_params)
     connect(p_handler.data(), &Handler::signalSendMsg, m_p_server_con.data(), &ServerConnection::send);
     connect(p_handler.data(), &Handler::signalError, this, &M2Qt::signalError);
 
-    // store into map ...   // TODO: implement removeHandler();
+    // TODO: implement removeHandler();
     m_handler_map[in_name] = p_handler.take();
 
     return true;
@@ -242,12 +248,28 @@ void M2Qt::setHandlerCallback(const QString& in_handler_name, const QString& in_
     if (m_initialized == false) { emit signalError("M2Qt::setHandlerCallback - M2Qt not initialized!"); return; }
     if (in_handler_name.isEmpty()) { emit signalError("M2Qt::setHandlerCallback - in_handler_name is empty!"); return; }
     if (in_callback_name.isEmpty()) { emit signalError("M2Qt::setHandlerCallback - in_callback_name is empty!"); return; }
-    if (m_handler_map.contains(in_handler_name) == false) { emit signalError("M2Qt::setHandlerCallback - in_handler_name not found!"); return; }
+    if (m_handler_map.contains(in_handler_name) == false) { emit signalError("M2Qt::setHandlerCallback - in_handler_name unknown!"); return; }
 
     Handler* handler = m_handler_map.value(in_handler_name, nullptr);
     if (handler == nullptr) return;
 
-    handler->setCallback(in_callback);
+    handler->setHandlerCallback(in_callback);
+}
+
+// ----------------------------------------------------------------------------
+// setFilterCallback
+// ----------------------------------------------------------------------------
+void M2Qt::setFilterCallback(const QString &in_handler_name, const QString &in_callback_name, FilterCallback in_callback) const
+{
+    if (m_initialized == false) { emit signalError("M2Qt::setFilterCallback - M2Qt not initialized!"); return; }
+    if (in_handler_name.isEmpty()) { emit signalError("M2Qt::setFilterCallback - Handler name is empty!"); return; }
+    if (in_callback_name.isEmpty()) { emit signalError("M2Qt::setFilterCallback - Callback name is empty!"); return; }
+    if (m_handler_map.contains(in_handler_name) == false) { emit signalError("M2Qt::setFilterCallback - Handler name unknown!"); return; }
+
+    Handler* handler = m_handler_map.value(in_handler_name, nullptr);
+    if (handler == nullptr) return;
+
+    handler->setFilterCallback(in_callback);
 }
 
 // ----------------------------------------------------------------------------

@@ -20,7 +20,7 @@ bool WebSocketHelper::init(const QVariantMap &in_params)
     if (update(in_params) == false) return false;
 
     m_ping_timer.setTimerType(Qt::VeryCoarseTimer);
-    m_ping_timer.setInterval(15000);
+    m_ping_timer.setInterval(10000);
 
     connect(m_p_web_sock, &QWebSocket::connected, this, &WebSocketHelper::slotOnConnected);
     connect(m_p_web_sock, &QWebSocket::disconnected, this, &WebSocketHelper::slotOnDisconnected);
@@ -75,10 +75,10 @@ void WebSocketHelper::socketConnect(const QUrl &in_url)
     if (in_url.isEmpty()) return;
 
     QNetworkRequest ws_req(in_url);
-    ws_req.setRawHeader(QByteArray("Origin"), QByteArray("http://").append(in_url.host().toLatin1()));
+    qDebug() << "WebSocketHelper::socketConnect - NetworkRequest Url:" << ws_req.url();
 
-    qDebug() << "WebSocketHelper::connect - NetworkRequest url:" << ws_req.url();
-    qDebug() << "WebSocketHelper::connect \tOrigin:" << ws_req.rawHeader(QByteArray("Origin")) << endl;
+    //ws_req.setRawHeader(QByteArray("Origin"), QByteArray("http://").append(in_url.host().toLatin1()));
+    //qDebug() << "WebSocketHelper::socketConnect - NetworkRequest Origin:" << ws_req.rawHeader(QByteArray("Origin")) << endl;
 
     m_p_web_sock->open(ws_req);
 }
@@ -119,7 +119,7 @@ void WebSocketHelper::slotOnDisconnected()
 // ----------------------------------------------------------------------------
 void WebSocketHelper::slotOnStateChanged(QAbstractSocket::SocketState state)
 {
-    qDebug() << "WebSocketHelper::slotOnStateChanged:" << state;
+    qDebug() << "WebSocketHelper::slotOnStateChanged:\n\t" << state;
     if (state != QAbstractSocket::ConnectedState) m_ws_connected = false;
 }
 // ----------------------------------------------------------------------------
@@ -134,7 +134,7 @@ void WebSocketHelper::slotOnError(QAbstractSocket::SocketError error)
 // ----------------------------------------------------------------------------
 void WebSocketHelper::slotOnTextMessage(const QString &message)
 {
-    qDebug() << "WebSocketHelper::slotOnTextMessage:" << message;
+    qDebug() << "WebSocketHelper::slotOnTextMessage:\n\t" << message;
 }
 // ----------------------------------------------------------------------------
 //
@@ -145,14 +145,14 @@ void WebSocketHelper::slotPing()
     if (m_p_web_sock->state() != QAbstractSocket::ConnectedState) return;
 
     qDebug() << "WebSocketHelper::slotPing - send ping to server";
-    m_p_web_sock->ping();
+    m_p_web_sock->ping(QByteArray("-Heartbeat-"));
 }
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
 void WebSocketHelper::slotOnPong(quint64 elapsedTime, const QByteArray &payload)
 {
-    qDebug() << "WebSocketHelper::slotPong:" << elapsedTime << payload;
+    qDebug() << "WebSocketHelper::slotOnPong - time:" << elapsedTime << " data:" << payload;
 }
 
 // ----------------------------------------------------------------------------
