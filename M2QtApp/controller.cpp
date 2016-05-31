@@ -26,10 +26,10 @@ bool Controller::init(const QVariantMap &in_params)
 {
     if (update(in_params) == false) return false;
 
-    m_p_m2qt = M2QtLoader::getM2Qt(in_params);
+    m_p_m2qt = M2QtHelper::getM2Qt(in_params);
     if (m_p_m2qt == nullptr) return false;
 
-    m_p_signal_agent = M2QtLoader::getSignalAgent();
+    m_p_signal_agent = M2QtHelper::getSignalAgent();
     if (m_p_signal_agent == nullptr) return false;
 
     connect(m_p_signal_agent, &SignalAgent::signalError, this, &Controller::slotError);

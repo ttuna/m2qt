@@ -81,7 +81,7 @@ static QByteArray getHTTPHeader(const QVector<NetString> &in_headers, const quin
 // ----------------------------------------------------------------------------
 // getJsonData
 // ----------------------------------------------------------------------------
-static QJsonObject getJsonData(const NetString &in_netstring)
+static QJsonObject netstring2Json(const NetString &in_netstring)
 {
     quint32 size = std::get<NS_SIZE>(in_netstring);
     if (size == 0) return QJsonObject();
@@ -90,7 +90,7 @@ static QJsonObject getJsonData(const NetString &in_netstring)
     if (raw_data.isEmpty()) return QJsonObject();
 
     // Mongrel2 uses a special format for json data msg:
-    // "@route { somejsondata } \0"
+    // '@route { somejsondata } \0'
     //      route           = defined route in mongrel config
     //      somejsondata    = json data (e.g. "key1":"value1", "key2":"value2")
     QByteArray data;
@@ -99,11 +99,11 @@ static QJsonObject getJsonData(const NetString &in_netstring)
         int b_open = raw_data.indexOf('{');
         int b_close = raw_data.lastIndexOf('}');
         if (b_open == -1 || b_close == -1 || b_open > b_close) return QJsonObject();
-        data = raw_data.mid(b_open, b_close-b_open);
+        data = raw_data.mid(b_open, b_close-b_open+1);
     }
     else
     {
-        // assuming that NetString data is a valid json format ...
+        // assume that NetString data is in valid json format ...
         data = raw_data;
     }
 
@@ -124,9 +124,8 @@ static QJsonObject getJsonHeader(const QVector<NetString> &in_netstrings)
     if (in_netstrings.isEmpty()) return QJsonObject();
     NetString header = in_netstrings[0];    // the first NetString is the header!!!
 
-    return getJsonData(header);
+    return netstring2Json(header);
 }
-
 
 // ----------------------------------------------------------------------------
 // isReqEmpty

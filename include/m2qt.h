@@ -99,19 +99,20 @@ public:
 
 // ----------------------------------------------------------------------------
 //
-// class M2QtLoader
+// class M2QtHelper
 //
 // ----------------------------------------------------------------------------
-class M2QtLoader final
+class M2QtHelper final
 {
 public:
-    virtual ~M2QtLoader() = default;
-    explicit M2QtLoader() = delete;
-    M2QtLoader(const M2QtLoader& other) = delete;
-    M2QtLoader& operator= (const M2QtLoader& other) = delete;
+    virtual ~M2QtHelper() = default;
+    explicit M2QtHelper() = delete;
+    M2QtHelper(const M2QtHelper& other) = delete;
+    M2QtHelper& operator= (const M2QtHelper& other) = delete;
 
     M2QTSHARED_EXPORT static M2QT::IM2Qt *getM2Qt(const QVariantMap &in_params = QVariantMap());
     M2QTSHARED_EXPORT static M2QT::SignalAgent *getSignalAgent();
+    M2QTSHARED_EXPORT static QJsonObject netstring2Json(const NetString &in_netstring);
 };
 
 } // namespace M2QT

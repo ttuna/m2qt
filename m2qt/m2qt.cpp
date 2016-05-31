@@ -184,7 +184,7 @@ void M2Qt::setSignalAgent(SignalAgent* in_signal_agent)
 }
 
 // ----------------------------------------------------------------------------
-// createM2QtHandler
+// createHandler
 // ----------------------------------------------------------------------------
 bool M2Qt::createHandler(const QString& in_name, const QVariantMap &in_params)
 {
@@ -246,12 +246,12 @@ void M2Qt::stop()
 void M2Qt::setHandlerCallback(const QString& in_handler_name, const QString& in_callback_name, HandlerCallback in_callback) const
 {
     if (m_initialized == false) { emit signalError(QStringLiteral("M2Qt::setHandlerCallback - M2Qt not initialized!")); return; }
-    if (in_handler_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::setHandlerCallback - in_handler_name is empty!")); return; }
-    if (in_callback_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::setHandlerCallback - in_callback_name is empty!")); return; }
-    if (m_handler_map.contains(in_handler_name) == false) { emit signalError(QStringLiteral("M2Qt::setHandlerCallback - in_handler_name unknown!")); return; }
+    if (in_handler_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::setHandlerCallback - handler name is empty!")); return; }
+    if (in_callback_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::setHandlerCallback - callback name is empty!")); return; }
+    if (m_handler_map.contains(in_handler_name) == false) { emit signalError(QStringLiteral("M2Qt::setHandlerCallback - handler name unknown!")); return; }
 
     Handler* handler = m_handler_map.value(in_handler_name, nullptr);
-    if (handler == nullptr) return;
+    if (handler == nullptr) { emit signalError(QStringLiteral("M2Qt::setHandlerCallback - handler invalid (nullptr)!")); return; }
 
     handler->setHandlerCallback(in_callback);
 }
@@ -262,12 +262,12 @@ void M2Qt::setHandlerCallback(const QString& in_handler_name, const QString& in_
 void M2Qt::setFilterCallback(const QString &in_handler_name, const QString &in_callback_name, FilterCallback in_callback) const
 {
     if (m_initialized == false) { emit signalError(QStringLiteral("M2Qt::setFilterCallback - M2Qt not initialized!")); return; }
-    if (in_handler_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::setFilterCallback - Handler name is empty!")); return; }
-    if (in_callback_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::setFilterCallback - Callback name is empty!")); return; }
-    if (m_handler_map.contains(in_handler_name) == false) { emit signalError(QStringLiteral("M2Qt::setFilterCallback - Handler name unknown!")); return; }
+    if (in_handler_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::setFilterCallback - handler name is empty!")); return; }
+    if (in_callback_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::setFilterCallback - callback name is empty!")); return; }
+    if (m_handler_map.contains(in_handler_name) == false) { emit signalError(QStringLiteral("M2Qt::setFilterCallback - handler name unknown!")); return; }
 
     Handler* handler = m_handler_map.value(in_handler_name, nullptr);
-    if (handler == nullptr) return;
+    if (handler == nullptr) { emit signalError(QStringLiteral("M2Qt::setFilterCallback - handler invalid (nullptr)!")); return; }
 
     handler->setFilterCallback(in_callback);
 }
@@ -281,15 +281,16 @@ SignalAgent *M2Qt::signalAgent() const
 }
 
 
+
 // ----------------------------------------------------------------------------
 //
-// class M2QtLoader
+// class M2QtHelper
 //
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 // getM2Qt (static)
 // ----------------------------------------------------------------------------
-IM2Qt *M2QtLoader::getM2Qt(const QVariantMap &in_params)
+IM2Qt *M2QtHelper::getM2Qt(const QVariantMap &in_params)
 {
     static M2Qt *p_lib;
 
@@ -309,9 +310,17 @@ IM2Qt *M2QtLoader::getM2Qt(const QVariantMap &in_params)
 }
 
 // ----------------------------------------------------------------------------
-// getM2Qt (static)
+// getSignalAgent (static)
 // ----------------------------------------------------------------------------
-SignalAgent *M2QtLoader::getSignalAgent()
+SignalAgent *M2QtHelper::getSignalAgent()
 {
     return new SignalAgent();
+}
+
+// ----------------------------------------------------------------------------
+// netstring2Json (static)
+// ----------------------------------------------------------------------------
+QJsonObject M2QtHelper::netstring2Json(const NetString &in_netstring)
+{
+    return ::netstring2Json(in_netstring);
 }

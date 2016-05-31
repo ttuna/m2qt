@@ -4,6 +4,7 @@
 
 #include <QDir>
 #include <QMessageLogger>
+#include <QJsonObject>
 #include <QDebug>
 
 using namespace M2QT;
@@ -35,9 +36,15 @@ Response callbackDriveStart(const Request& in_req)
     if (g_drive_starter.isValid() == false) return Response();
     if (g_drive_starter.state() != QProcess::NotRunning) return Response();
 
-    QStringList args;
+    // assume that payload is net_strings[1] ...
+    QJsonObject json_data = M2QtHelper::netstring2Json(net_strings[1]);
+    if (json_data.isEmpty()) return Response();
+
+    // TODO ...
+    QStringList args(json_data.find(QLatin1String("data")).value().toString().split(' '));
     g_drive_starter.slotStart(args);
 
+    // TODO ...
     Response resp;
     return resp;
 }
@@ -64,11 +71,11 @@ bool Controller::init(const QVariantMap &in_params)
     if (update(in_params) == false) return false;
 
     // load m2qt lib ...
-    m_p_m2qt = M2QtLoader::getM2Qt(in_params);
+    m_p_m2qt = M2QtHelper::getM2Qt(in_params);
     if (m_p_m2qt == nullptr) return false;
 
     // create and connect signal agent for m2qt ...
-    m_p_signal_agent = M2QtLoader::getSignalAgent();
+    m_p_signal_agent = M2QtHelper::getSignalAgent();
     if (m_p_signal_agent == nullptr) return false;
 
     connect(m_p_signal_agent, &SignalAgent::signalError, this, &Controller::slotError);
