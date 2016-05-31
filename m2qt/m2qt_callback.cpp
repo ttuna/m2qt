@@ -100,13 +100,13 @@ Response WebsocketHandshakeHandler(const Request &in_message)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-Response EchoHandler(const Request &in_message)
+Response WebsocketEchoHandler(const Request &in_message)
 {
     QByteArray uuid, id, path;
     QVector<NetString> net_strings;
     std::tie(uuid, id, path, net_strings) = in_message;
 
-    QByteArray response_data = "HTTP/1.1 202 Accepted\r\n\r\n";
+    QByteArray response_data; // = "HTTP/1.1 202 Accepted\r\n\r\n";
     for (int i = 1; i<net_strings.size(); ++i)
     {
         response_data += std::get<NS_DATA>(net_strings[i]);
@@ -125,7 +125,7 @@ Response EchoHandler(const Request &in_message)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-Response PongHandler(const Request &in_message)
+Response WebsocketPongHandler(const Request &in_message)
 {
     QByteArray uuid, id, path;
     QVector<NetString> net_strings;
@@ -189,7 +189,7 @@ bool WebsocketHandshakeFilter(const Request &in_message)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-bool EchoFilter(const Request &in_message)
+bool WebsocketEchoFilter(const Request &in_message)
 {
     QByteArray uuid, id, path;
     QVector<NetString> net_strings;
@@ -197,17 +197,17 @@ bool EchoFilter(const Request &in_message)
 
     // get HEADER - first NetString must be the header obj ...
     QJsonObject jobj = M2QT::getJsonHeader(net_strings);
-    if (jobj.isEmpty()) { emit helper->signalError(QStringLiteral("EchoFilter - No header available!")); return false; }
+    if (jobj.isEmpty()) { emit helper->signalError(QStringLiteral("WebsocketEchoFilter - No header available!")); return false; }
 
     // get METHOD ...
     QJsonValue val = jobj.value(QLatin1String("METHOD"));
-    if (val.isUndefined()) { emit helper->signalError(QStringLiteral("EchoFilter - Couldn't find METHOD header!")); return false; }
+    if (val.isUndefined()) { emit helper->signalError(QStringLiteral("WebsocketEchoFilter - Couldn't find METHOD header!")); return false; }
     // must be "WEBSOCKET" ...
     if (val.toString() != QLatin1String("WEBSOCKET")) return false;
 
     // get FLAGS ...
     val = jobj.value(QLatin1String("FLAGS"));
-    if (val.isUndefined()) { emit helper->signalError(QStringLiteral("EchoFilter - Couldn't find FLAGS header!")); return false; }
+    if (val.isUndefined()) { emit helper->signalError(QStringLiteral("WebsocketEchoFilter - Couldn't find FLAGS header!")); return false; }
     // req opcode must be 0x01 = text frame ...
     bool ok = false;
     quint8 value = val.toString().toInt(&ok, 16);
@@ -219,7 +219,7 @@ bool EchoFilter(const Request &in_message)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-bool PongFilter(const Request &in_message)
+bool WebsocketPongFilter(const Request &in_message)
 {
     QByteArray uuid, id, path;
     QVector<NetString> net_strings;
@@ -227,17 +227,17 @@ bool PongFilter(const Request &in_message)
 
     // get HEADER - first NetString must be the header obj ...
     QJsonObject jobj = M2QT::getJsonHeader(net_strings);
-    if (jobj.isEmpty()) { emit helper->signalError(QStringLiteral("EchoFilter - No header available!")); return false; }
+    if (jobj.isEmpty()) { emit helper->signalError(QStringLiteral("WebsocketPongFilter - No header available!")); return false; }
 
     // get METHOD ...
     QJsonValue val = jobj.value(QLatin1String("METHOD"));
-    if (val.isUndefined()) { emit helper->signalError(QStringLiteral("EchoFilter - Couldn't find METHOD header!")); return false; }
+    if (val.isUndefined()) { emit helper->signalError(QStringLiteral("WebsocketPongFilter - Couldn't find METHOD header!")); return false; }
     // must be "WEBSOCKET" ...
     if (val.toString() != QLatin1String("WEBSOCKET")) return false;
 
     // get FLAGS ...
     val = jobj.value(QLatin1String("FLAGS"));
-    if (val.isUndefined()) { emit helper->signalError(QStringLiteral("EchoFilter - Couldn't find FLAGS header!")); return false; }
+    if (val.isUndefined()) { emit helper->signalError(QStringLiteral("WebsocketPongFilter - Couldn't find FLAGS header!")); return false; }
     // req opcode must be 0x09 = ping frame ...
     bool ok = false;
     quint8 value = val.toString().toInt(&ok, 16);
@@ -252,8 +252,8 @@ bool PongFilter(const Request &in_message)
 namespace M2Qt {
     const QString DEBUG_OUTPUT_NAME = "debug_output";
     const QString WS_HANDSHAKE_NAME = "websocket_handshake";
-    const QString ECHO_NAME         = "echo";
-    const QString PONG_NAME         = "pong";
+    const QString WS_ECHO_NAME      = "websocket_echo";
+    const QString WS_PONG_NAME      = "websocket_pong";
     const QString HEAVY_DUTY_NAME   = "heavy_duty";
 }
 
@@ -270,8 +270,8 @@ QMap<QString, HandlerCallback> CallbackManager::m_handler_callback_map =
 {
     { M2Qt::DEBUG_OUTPUT_NAME,  &DebugOutputHandler },
     { M2Qt::WS_HANDSHAKE_NAME,  &WebsocketHandshakeHandler },
-    { M2Qt::ECHO_NAME,          &EchoHandler },
-    { M2Qt::PONG_NAME,          &PongHandler },
+    { M2Qt::WS_ECHO_NAME,       &WebsocketEchoHandler },
+    { M2Qt::WS_PONG_NAME,       &WebsocketPongHandler },
 #ifdef ENABLE_DEV_CALLBACKS
     { M2Qt::HEAVY_DUTY_NAME,    &HeavyDutyHandler },
 #endif
@@ -280,8 +280,8 @@ QMap<QString, HandlerCallback> CallbackManager::m_handler_callback_map =
 QMap<QString, FilterCallback> CallbackManager::m_filter_callback_map =
 {
     { M2Qt::WS_HANDSHAKE_NAME,  &WebsocketHandshakeFilter },
-    { M2Qt::ECHO_NAME,          &EchoFilter },
-    { M2Qt::PONG_NAME,          &PongFilter },
+    { M2Qt::WS_ECHO_NAME,       &WebsocketEchoFilter },
+    { M2Qt::WS_PONG_NAME,       &WebsocketPongFilter },
 };
 
 // ----------------------------------------------------------------------------

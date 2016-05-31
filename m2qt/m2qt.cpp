@@ -100,18 +100,18 @@ M2Qt::~M2Qt()
 bool M2Qt::init(zmq::context_t* in_ctx, const QVariantMap& in_params)
 {
     qDebug() << "M2Qt::init";
-    if (in_ctx == nullptr) { emit signalError("M2Qt::init - zmq_context == null!"); return false; }
+    if (in_ctx == nullptr) { emit signalError(QStringLiteral("M2Qt::init - zmq_context == null!")); return false; }
     if (update(in_params) == false) { emit signalError("M2Qt::init - update() failed!"); return false; }
 
     QScopedPointer<ServerConnection> tmp_server_con(new ServerConnection);
-    if (tmp_server_con.isNull()) { emit signalError("M2Qt::init - Couldn't allocate ServerConnection!"); return false; }
+    if (tmp_server_con.isNull()) { emit signalError(QStringLiteral("M2Qt::init - Couldn't allocate ServerConnection!")); return false; }
     if (tmp_server_con->init(in_ctx, in_params) == false) { emit signalError("M2Qt::init - ServerConnection initialisation failed!"); return false; }
 
     QScopedPointer<MessageParser> tmp_msg_parser(new MessageParser);
-    if (tmp_msg_parser.isNull()) { emit signalError("M2Qt::init - Couldn't allocate MessageParser!"); return false; }
+    if (tmp_msg_parser.isNull()) { emit signalError(QStringLiteral("M2Qt::init - Couldn't allocate MessageParser!")); return false; }
 
     QScopedPointer<CallbackManager> tmp_def_cb_manager(new CallbackManager);
-    if (tmp_def_cb_manager.isNull()) { emit signalError("M2Qt::init - Couldn't allocate DefaultCallbackManager!"); return false; }
+    if (tmp_def_cb_manager.isNull()) { emit signalError(QStringLiteral("M2Qt::init - Couldn't allocate DefaultCallbackManager!")); return false; }
 
     m_p_server_con = QSharedPointer<ServerConnection>(tmp_server_con.take());
     m_p_parser = QSharedPointer<MessageParser>(tmp_msg_parser.take());
@@ -188,19 +188,19 @@ void M2Qt::setSignalAgent(SignalAgent* in_signal_agent)
 // ----------------------------------------------------------------------------
 bool M2Qt::createHandler(const QString& in_name, const QVariantMap &in_params)
 {
-    if (m_initialized == false) { emit signalError("M2Qt::createHandler - M2Qt not initialized!"); return false; }
-    if (in_name.isEmpty()) { emit signalError("M2Qt::createHandler - Handler name is empty!"); return false; }
-    if (in_params.isEmpty()) { emit signalError("M2Qt::createHandler - Handler params are empty!"); return false; }
+    if (m_initialized == false) { emit signalError(QStringLiteral("M2Qt::createHandler - M2Qt not initialized!")); return false; }
+    if (in_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::createHandler - Handler name is empty!")); return false; }
+    if (in_params.isEmpty()) { emit signalError(QStringLiteral("M2Qt::createHandler - Handler params are empty!")); return false; }
 
     if (m_handler_map.contains(in_name))
     {
-        emit signalError("M2Qt::createHandler - Handler already known!");
+        emit signalError("M2Qt::createHandler - Handler already exists!");
         return (m_handler_map.value(in_name, nullptr) != nullptr);
     }
 
     QScopedPointer<Handler> p_handler(new Handler());
-    if (p_handler.isNull()) { emit signalError("M2Qt::createHandler - Couldn't allocate handler!"); return false; }
-    if (p_handler->init(in_name, m_p_zmq_ctx, in_params) == false) { emit signalError("M2Qt::createHandler - Handler initialisation failed!"); return false; }
+    if (p_handler.isNull()) { emit signalError(QStringLiteral("M2Qt::createHandler - Couldn't allocate handler!")); return false; }
+    if (p_handler->init(in_name, m_p_zmq_ctx, in_params) == false) { emit signalError(QStringLiteral("M2Qt::createHandler - Handler initialisation failed!")); return false; }
 
     // handler signals ...
     connect(m_p_parser.data(), &MessageParser::signalResult, p_handler.data(), &Handler::handleParserResults);
@@ -218,7 +218,7 @@ bool M2Qt::createHandler(const QString& in_name, const QVariantMap &in_params)
 // ----------------------------------------------------------------------------
 void M2Qt::start()
 {
-    if (m_initialized == false) { emit signalError("M2Qt::start - M2Qt not initialized!"); return; }
+    if (m_initialized == false) { emit signalError(QStringLiteral("M2Qt::start - M2Qt not initialized!")); return; }
 
     // send first INIT msg ...
     qDebug() << "M2Qt::start - send init msg" << m_p_server_con->senderId();
@@ -235,7 +235,7 @@ void M2Qt::start()
 // ----------------------------------------------------------------------------
 void M2Qt::stop()
 {
-    if (m_initialized == false) { emit signalError("M2Qt::stopHandler - M2Qt not initialized!"); return; }
+    if (m_initialized == false) { emit signalError(QStringLiteral("M2Qt::stopHandler - M2Qt not initialized!")); return; }
     m_p_server_con->stop();
     emit signalStopped();
 }
@@ -245,10 +245,10 @@ void M2Qt::stop()
 // ----------------------------------------------------------------------------
 void M2Qt::setHandlerCallback(const QString& in_handler_name, const QString& in_callback_name, HandlerCallback in_callback) const
 {
-    if (m_initialized == false) { emit signalError("M2Qt::setHandlerCallback - M2Qt not initialized!"); return; }
-    if (in_handler_name.isEmpty()) { emit signalError("M2Qt::setHandlerCallback - in_handler_name is empty!"); return; }
-    if (in_callback_name.isEmpty()) { emit signalError("M2Qt::setHandlerCallback - in_callback_name is empty!"); return; }
-    if (m_handler_map.contains(in_handler_name) == false) { emit signalError("M2Qt::setHandlerCallback - in_handler_name unknown!"); return; }
+    if (m_initialized == false) { emit signalError(QStringLiteral("M2Qt::setHandlerCallback - M2Qt not initialized!")); return; }
+    if (in_handler_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::setHandlerCallback - in_handler_name is empty!")); return; }
+    if (in_callback_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::setHandlerCallback - in_callback_name is empty!")); return; }
+    if (m_handler_map.contains(in_handler_name) == false) { emit signalError(QStringLiteral("M2Qt::setHandlerCallback - in_handler_name unknown!")); return; }
 
     Handler* handler = m_handler_map.value(in_handler_name, nullptr);
     if (handler == nullptr) return;
@@ -261,10 +261,10 @@ void M2Qt::setHandlerCallback(const QString& in_handler_name, const QString& in_
 // ----------------------------------------------------------------------------
 void M2Qt::setFilterCallback(const QString &in_handler_name, const QString &in_callback_name, FilterCallback in_callback) const
 {
-    if (m_initialized == false) { emit signalError("M2Qt::setFilterCallback - M2Qt not initialized!"); return; }
-    if (in_handler_name.isEmpty()) { emit signalError("M2Qt::setFilterCallback - Handler name is empty!"); return; }
-    if (in_callback_name.isEmpty()) { emit signalError("M2Qt::setFilterCallback - Callback name is empty!"); return; }
-    if (m_handler_map.contains(in_handler_name) == false) { emit signalError("M2Qt::setFilterCallback - Handler name unknown!"); return; }
+    if (m_initialized == false) { emit signalError(QStringLiteral("M2Qt::setFilterCallback - M2Qt not initialized!")); return; }
+    if (in_handler_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::setFilterCallback - Handler name is empty!")); return; }
+    if (in_callback_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::setFilterCallback - Callback name is empty!")); return; }
+    if (m_handler_map.contains(in_handler_name) == false) { emit signalError(QStringLiteral("M2Qt::setFilterCallback - Handler name unknown!")); return; }
 
     Handler* handler = m_handler_map.value(in_handler_name, nullptr);
     if (handler == nullptr) return;
@@ -283,7 +283,7 @@ SignalAgent *M2Qt::signalAgent() const
 
 // ----------------------------------------------------------------------------
 //
-// class M2QtCreator
+// class M2QtLoader
 //
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------

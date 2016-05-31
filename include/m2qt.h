@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QVariant>
+#include <QVector>
 #include <QtCore/qglobal.h>
 #include <functional>
 
@@ -24,16 +25,15 @@
 
 namespace M2QT {
 
-// Mongrel2 NetString   // size | data
+// Mongrel2 NetString   = size | data
 using NetString = std::tuple<quint32, QByteArray>;
 enum NetStringIdx {NS_SIZE=0, NS_DATA};
 
-// Mongrel2 Request     // uuid | id | path | netstrings
+// Mongrel2 Request     = uuid | id | path | netstrings
 using Request = std::tuple<QByteArray, QByteArray, QByteArray, QVector<NetString>>;
 enum RequestIdx {REQ_UUID=0, REQ_ID, REQ_PATH, REQ_NETSTRINGS};
 
-// TODO: change second item to NetString ...
-// Mongrel2 Response    // uuid | (size(id):id) | body
+// Mongrel2 Response    = uuid | (size(id):id) | body
 using Response = std::tuple<QByteArray, NetString, QByteArray>;
 enum ResponseIdx {REP_UUID=0, REP_ID, REP_BODY};
 
@@ -44,6 +44,8 @@ using HandlerCallback = std::function<Response(const Request&)>;
 using FilterCallback = std::function<bool(const Request&)>;
 
 // ----------------------------------------------------------------------------
+Q_DECLARE_METATYPE(M2QT::HandlerCallback)
+Q_DECLARE_METATYPE(M2QT::FilterCallback)
 // ----------------------------------------------------------------------------
 
 

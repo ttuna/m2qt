@@ -24,9 +24,9 @@ Handler::~Handler()
 bool Handler::init(const QString &in_name, zmq::context_t *in_zmq_ctx, const QVariantMap &in_params)
 {
     qDebug() << "Handler::init";
-    if (in_zmq_ctx == nullptr) { emit signalError("Handler::init - zmq_context == nullptr!"); return false; }
-    if (in_params.isEmpty()) { emit signalError("Handler::init - Parameter map is empty"); return false; }
-    if (update(in_params) == false) { emit signalError("Handler::init - update() failed!"); return false; }
+    if (in_zmq_ctx == nullptr) { emit signalError(QStringLiteral("Handler::init - zmq_context == nullptr!")); return false; }
+    if (in_params.isEmpty()) { emit signalError(QStringLiteral("Handler::init - Parameter map is empty")); return false; }
+    if (update(in_params) == false) { emit signalError(QStringLiteral("Handler::init - update() failed!")); return false; }
 
     m_name = in_name;
     m_initialized = true;
@@ -58,6 +58,22 @@ bool Handler::update(const QVariantMap& in_params)
         qDebug() << "Handler::update - default_callback:" << def_callback;
     }
 
+    if (in_params.contains("user_callback"))
+    {
+        QVariant var_handler = in_params.value("user_callback", QVariant());
+        if (var_handler.isValid() == false) return false;
+        qDebug() << "Handler::update - user_callback:" << var_handler;
+        m_handler_callback = var_handler.value<HandlerCallback>();
+    }
+
+    if (in_params.contains("user_filter"))
+    {
+        QVariant var_filter = in_params.value("user_filter", QVariant());
+        if (var_filter.isValid() == false) return false;
+        qDebug() << "Handler::update - user_filter:" << var_filter;
+        m_filter_callback = var_filter.value<FilterCallback>();
+    }
+
     return true;
 }
 
@@ -74,8 +90,8 @@ bool Handler::isValid() const
 // ----------------------------------------------------------------------------
 void Handler::handleParserResults(const Request &in_req)
 {
-    if (m_initialized == false) { emit signalError("Handler::handleParserResults - Handler not initialized!"); return; }
-    if (M2QT::isReqEmpty(in_req) == true) { emit signalError("Handler::handleParserResults - Request is empty!"); return; }
+    if (m_initialized == false) { emit signalError(QStringLiteral("Handler::handleParserResults - Handler not initialized!")); return; }
+    if (M2QT::isReqEmpty(in_req) == true) { emit signalError(QStringLiteral("Handler::handleParserResults - Request is empty!")); return; }
     if (m_handler_callback == nullptr) return;
 
     // apply filter callback if available ...
@@ -98,7 +114,7 @@ void Handler::handleParserResults(const Request &in_req)
 // ----------------------------------------------------------------------------
 bool Handler::setHandlerCallback(HandlerCallback in_callback)
 {
-    if (m_initialized == false) { emit signalError("Handler::setHandlerCallback - Handler not initialized!"); return false; }
+    if (m_initialized == false) { emit signalError(QStringLiteral("Handler::setHandlerCallback - Handler not initialized!")); return false; }
 
     m_handler_callback = in_callback;
     emit signalDebug("Handler::setHandlerCallback - set handler callback");
@@ -110,7 +126,7 @@ bool Handler::setHandlerCallback(HandlerCallback in_callback)
 // ----------------------------------------------------------------------------
 bool Handler::setFilterCallback(FilterCallback in_callback)
 {
-    if (m_initialized == false) { emit signalError("Handler::setFilterCallback - Handler not initialized!"); return false; }
+    if (m_initialized == false) { emit signalError(QStringLiteral("Handler::setFilterCallback - Handler not initialized!")); return false; }
 
     m_filter_callback = in_callback;
     return true;

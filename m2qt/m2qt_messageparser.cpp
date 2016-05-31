@@ -15,12 +15,12 @@ MessageParser::MessageParser(QObject *parent) : QObject(parent)
 // ----------------------------------------------------------------------------
 Request MessageParser::parse(const QByteArray &in_data) const   // TODO: make this static ???
 {
-    if (in_data.isEmpty()) { emit signalError(QLatin1String("MessageParser::parse - Empty message!")); return Request(); }
+    if (in_data.isEmpty()) { emit signalError(QStringLiteral("MessageParser::parse - Empty message!")); return Request(); }
 
     char separator = ' ';
     QByteArrayList token_list = in_data.split(separator);
-    if (token_list.isEmpty()) { emit signalError(QLatin1String("MessageParser::parse - Token list is empty!")); return Request(); }
-    else if (token_list.count() < 4) { emit signalError(QLatin1String("MessageParser::parse - Token list mismatch!")); return Request(); }
+    if (token_list.isEmpty()) { emit signalError(QStringLiteral("MessageParser::parse - Token list is empty!")); return Request(); }
+    else if (token_list.count() < 4) { emit signalError(QStringLiteral("MessageParser::parse - Token list mismatch!")); return Request(); }
 
     QByteArray uuid(token_list.takeFirst());
     QByteArray id(token_list.takeFirst());

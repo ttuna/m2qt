@@ -51,6 +51,7 @@ bool WebSocketHelper::update(const QVariantMap &in_params)
 {
     if (in_params.contains("msg_template"))
     {
+        // TODO: parse template and create a json-key string list ...
         m_msg_template = in_params["msg_template"].toString();
         qDebug() << "WebSocketHelper::update - msg_template:" << m_msg_template;
     }
@@ -88,6 +89,7 @@ void WebSocketHelper::socketConnect(const QUrl &in_url)
 // ----------------------------------------------------------------------------
 void WebSocketHelper::send(const QByteArray &in_type, const QByteArray &in_data)
 {
+    // TODO: pass a QStringList/QMap to send() and fill template with separated tokens ...
     if (m_initialized == false) return;
     if (m_p_web_sock->isValid() == false) return;
     if (m_ws_connected == false) return;
@@ -104,6 +106,8 @@ void WebSocketHelper::slotOnConnected()
     qDebug() << "WebSocketHelper::slotOnConnected";
     m_ws_connected = true;
     Sleep(10);
+
+    // send greetings after websocket is connected ...
     send("message", "Hello Mongrel!");
 }
 // ----------------------------------------------------------------------------
@@ -127,7 +131,7 @@ void WebSocketHelper::slotOnStateChanged(QAbstractSocket::SocketState state)
 // ----------------------------------------------------------------------------
 void WebSocketHelper::slotOnError(QAbstractSocket::SocketError error)
 {
-    qDebug() << "WebSocketHelper::slotOnError:" << error;
+    qDebug() << "WebSocketHelper::slotOnError:\n\t" << error;
 }
 // ----------------------------------------------------------------------------
 //
