@@ -112,7 +112,7 @@ public:
 
     M2QTSHARED_EXPORT static M2QT::IM2Qt *getM2Qt(const QVariantMap &in_params = QVariantMap());
     M2QTSHARED_EXPORT static M2QT::SignalAgent *getSignalAgent();
-    M2QTSHARED_EXPORT static QJsonObject netstring2Json(const NetString &in_netstring);
+    M2QTSHARED_EXPORT static QJsonObject netstring2Json(const NetString &in_netstring, QByteArray &out_prefix = QByteArray());
 };
 
 } // namespace M2QT

@@ -8,6 +8,8 @@
 #include <QDir>
 #include <QSharedPointer>
 
+#include "global.h"
+
 class DriveStarter;
 
 namespace M2QT {
@@ -46,10 +48,6 @@ private:
     M2QT::IM2Qt* m_p_m2qt;
     M2QT::SignalAgent* m_p_signal_agent = nullptr;
     QVector<QString> m_handler_names;
-    QDir m_app_dir;
-    QString m_app_file_name;
 };
-
-Q_DECLARE_METATYPE(QDir)
 
 #endif // CONTROLLER_H

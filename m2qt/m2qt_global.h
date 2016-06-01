@@ -81,7 +81,7 @@ static QByteArray getHTTPHeader(const QVector<NetString> &in_headers, const quin
 // ----------------------------------------------------------------------------
 // getJsonData
 // ----------------------------------------------------------------------------
-static QJsonObject netstring2Json(const NetString &in_netstring)
+static QJsonObject netstring2Json(const NetString &in_netstring, QByteArray& out_prefix = QByteArray())
 {
     quint32 size = std::get<NS_SIZE>(in_netstring);
     if (size == 0) return QJsonObject();
@@ -100,14 +100,13 @@ static QJsonObject netstring2Json(const NetString &in_netstring)
         int b_close = raw_data.lastIndexOf('}');
         if (b_open == -1 || b_close == -1 || b_open > b_close) return QJsonObject();
         data = raw_data.mid(b_open, b_close-b_open+1);
+        out_prefix = raw_data.left(b_open);
     }
     else
     {
         // assume that NetString data is in valid json format ...
         data = raw_data;
     }
-
-    qDebug() << "getJsonData() - data:" << data;
 
     QJsonDocument jdoc = QJsonDocument::fromJson(data);
     if (jdoc.isEmpty()) return QJsonObject();

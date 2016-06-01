@@ -24,13 +24,7 @@ Response callbackDriveStart(const Request& in_req)
     QVector<NetString> net_strings;
     std::tie(uuid, id, path, net_strings) = in_req;
 
-    QByteArray request_data;
-    for (int i = 1; i<net_strings.size(); ++i)
-    {
-        request_data += std::get<NS_DATA>(net_strings[i]);
-    }
-
-    qDebug() << "callbackDriveStart - uuid:" << uuid << "id:" << id << "path:" << path << "data:" << request_data;
+    if (net_strings.size() < 2) return Response();
 
     // TODO: improve error handling :-)
     if (g_drive_starter.isValid() == false) return Response();
@@ -39,16 +33,42 @@ Response callbackDriveStart(const Request& in_req)
     // assume that payload is net_strings[1] ...
     QJsonObject json_data = M2QtHelper::netstring2Json(net_strings[1]);
     if (json_data.isEmpty()) return Response();
+    qDebug() << "callbackDriveStart - json_data:" << json_data;
 
     // TODO ...
-    QStringList args(json_data.find(QLatin1String("data")).value().toString().split(' '));
-    g_drive_starter.slotStart(args);
+    QStringList args(json_data.find(QLatin1String("message")).value().toString());
+    qDebug() << "callbackDriveStart - args:" << args;
+
+    g_drive_starter.slotStart(args, true);
 
     // TODO ...
     Response resp;
     return resp;
 }
+
+// ----------------------------------------------------------------------------
+// callbackFilter
+// ----------------------------------------------------------------------------
+bool callbackFilter(const Request& in_req)
+{
+    QByteArray uuid, id, path;
+    QVector<NetString> net_strings;
+    std::tie(uuid, id, path, net_strings) = in_req;
+
+    if (net_strings.size() < 2) return false;
+
+    QByteArray prefix;
+    M2QtHelper::netstring2Json(net_strings[1], prefix);
+    if (prefix.isEmpty()) return false;
+    prefix = prefix.trimmed();
+    qDebug() << "callbackFilter - prefix:" << prefix;
+
+    if (prefix == QLatin1String("@starter_msg")) return true;
+    return false;
+}
+
 }   // namespace ...
+// ----------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
 // ctor / dtor ...
@@ -68,13 +88,14 @@ Controller::~Controller()
 // ----------------------------------------------------------------------------
 bool Controller::init(const QVariantMap &in_params)
 {
+    qDebug() << "\nController::init";
     if (update(in_params) == false) return false;
 
-    // load m2qt lib ...
+    // I.) load m2qt lib ...
     m_p_m2qt = M2QtHelper::getM2Qt(in_params);
     if (m_p_m2qt == nullptr) return false;
 
-    // create and connect signal agent for m2qt ...
+    // II.) create and connect signal agent for m2qt ...
     m_p_signal_agent = M2QtHelper::getSignalAgent();
     if (m_p_signal_agent == nullptr) return false;
 
@@ -85,10 +106,10 @@ bool Controller::init(const QVariantMap &in_params)
 
     m_p_m2qt->setSignalAgent(m_p_signal_agent);
 
-    // init global DriveStarter for user callback ...
-    if (g_drive_starter.init(m_app_dir, m_app_file_name) == false) return false;
+    // III.) init global DriveStarter for user callback ...
+    if (g_drive_starter.init(in_params) == false) return false;
 
-    // create default handler and user handler ...
+    // IV.) create default handler and user handler ...
     QVariantMap handler_params;
     // debug output handler (default callback)
     handler_params.clear();
@@ -98,14 +119,20 @@ bool Controller::init(const QVariantMap &in_params)
     handler_params.clear();
     handler_params[QLatin1String("default_callback")] = QLatin1String("websocket_handshake");
     if (createHandler(QLatin1String("websocket_handshake"), handler_params) == false) return false;
-    // pong handler (default callback)
+    // websocket close handler (default callback)
     handler_params.clear();
-    handler_params[QLatin1String("default_callback")] = QLatin1String("pong");
-    if (createHandler(QLatin1String("pong"), handler_params) == false) return false;
+    handler_params[QLatin1String("default_callback")] = QLatin1String("websocket_close");
+    if (createHandler(QLatin1String("websocket_close"), handler_params) == false) return false;
+    // websocket pong handler (default callback)
+    handler_params.clear();
+    handler_params[QLatin1String("default_callback")] = QLatin1String("websocket_pong");
+    if (createHandler(QLatin1String("websocket_pong"), handler_params) == false) return false;
     // starter handler (user callback)
     handler_params.clear();
     HandlerCallback starter = callbackDriveStart;
+    FilterCallback filter = callbackFilter;
     handler_params[QLatin1String("user_callback")] = QVariant::fromValue(starter);
+    handler_params[QLatin1String("user_filter")] = QVariant::fromValue(filter);
     if (createHandler(QLatin1String("callbackDriveStart"), handler_params) == false) return false;
 
     m_initialized = true;
@@ -130,24 +157,7 @@ void Controller::cleanup()
 // ----------------------------------------------------------------------------
 bool Controller::update(const QVariantMap &in_params)
 {
-    if (in_params.contains("app_dir"))
-    {
-        QVariant var_app_dir = in_params["app_dir"];
-        if (var_app_dir.isValid() == false) return false;
-        m_app_dir = var_app_dir.value<QDir>();
-        qDebug() << "Controller::update - app_dir:" << m_app_dir;
-    }
-
-    if (in_params.contains("app_file"))
-    {
-        QVariant var_app_file = in_params["app_file"];
-        if (var_app_file.isValid() == false) return false;
-        m_app_file_name = var_app_file.value<QString>();
-        qDebug() << "Controller::update - app_file:" << m_app_file_name;
-    }
-
-    if (QFileInfo(m_app_dir, m_app_file_name).isExecutable() == false) return false;
-
+    Q_UNUSED(in_params)
     return true;
 }
 
@@ -169,7 +179,7 @@ bool Controller::createHandler(const QString &in_name, const QVariantMap &in_par
 
     bool created = m_p_m2qt->createHandler(in_name, in_params);
 
-    if (created == false) qDebug() << "Controller::createHandler - handler creation failed ...";
+    if (created == false) qDebug() << "\nController::createHandler - handler creation failed ...";
     else m_handler_names.push_back(in_name);
 
     return created;

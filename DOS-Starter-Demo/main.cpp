@@ -20,10 +20,10 @@ int main(int argc, char *argv[])
     params[QLatin1String("app_file")] = QLatin1String("AVLDrive.exe");
 
     Controller controller;
-    controller.init(params);
+    if (controller.init(params) == false) { qDebug() << "\nERROR: controller init failed!"; return -1; }
     controller.start();
 
-    qDebug() << "\nstarting Main Event Loop ...\n";
+    qDebug() << "\nstarting Main Event Loop ...";
 
     return a.exec();
 }

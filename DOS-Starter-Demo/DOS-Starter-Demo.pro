@@ -5,7 +5,7 @@ QT += network
 QT += websockets
 
 CONFIG += c++11
-DEFINES += homeoffice
+#DEFINES += homeoffice
 
 TARGET = DOS-Starter-Demo
 CONFIG += console
@@ -62,7 +62,8 @@ SOURCES += main.cpp \
 HEADERS += \
     controller.h \
     $$INCLUDE_DIR/m2qt.h \
-    drivestarter.h
+    drivestarter.h \
+    global.h
 
 INCLUDEPATH += \
     $$INCLUDE_DIR \

@@ -1,23 +1,21 @@
 ﻿#include "drivestarter.h"
 #include <QDebug>
 
+// ----------------------------------------------------------------------------
+// ctor
+// ----------------------------------------------------------------------------
 DriveStarter::DriveStarter(QObject *parent) : QObject(parent)
 {
 
 }
-//////////////////////////////////////////////////////////////////////////
-///
-///
-//////////////////////////////////////////////////////////////////////////
-bool DriveStarter::init(const QDir &in_drive_path, const QString &in_drive_exe)
-{
-    qDebug() << "DriveStarter::init" << in_drive_path << in_drive_exe;
-    if (in_drive_path.exists() == false) return false;
-    if (in_drive_exe.isEmpty()) return false;
-    if (QFile::exists(in_drive_path.absoluteFilePath(in_drive_exe)) == false) return false;
 
-    m_drive_path = in_drive_path;
-    m_drive_exe = in_drive_exe;
+// ----------------------------------------------------------------------------
+// init
+// ----------------------------------------------------------------------------
+bool DriveStarter::init(const QVariantMap &in_params)
+{
+    qDebug() << "\nDriveStarter::init";
+    if (update(in_params) == false) return false;
 
     connect(&m_drive_process, &QProcess::started, this, &DriveStarter::signalProcessStarted);
     connect(&m_drive_process, &QProcess::stateChanged, this, &DriveStarter::signalProcessStateChanged);
@@ -33,45 +31,87 @@ bool DriveStarter::init(const QDir &in_drive_path, const QString &in_drive_exe)
     m_initialized = true;
     return true;
 }
-//////////////////////////////////////////////////////////////////////////
-///
-///
-//////////////////////////////////////////////////////////////////////////
+
+// ----------------------------------------------------------------------------
+// cleanup
+// ----------------------------------------------------------------------------
+void DriveStarter::cleanup()
+{
+
+}
+
+// ----------------------------------------------------------------------------
+// update
+// ----------------------------------------------------------------------------
+bool DriveStarter::update(const QVariantMap &in_params)
+{
+    if (in_params.contains("app_dir"))
+    {
+        QVariant var_app_dir = in_params["app_dir"];
+        if (var_app_dir.isValid() == false) return false;
+        m_drive_path = var_app_dir.value<QDir>();
+        qDebug() << "DriveStarter::update - app_dir:" << m_drive_path.absolutePath();
+    }
+
+    if (in_params.contains("app_file"))
+    {
+        QVariant var_app_file = in_params["app_file"];
+        if (var_app_file.isValid() == false) return false;
+        m_drive_exe = var_app_file.value<QString>();
+        qDebug() << "DriveStarter::update - app_file:" << m_drive_exe;
+    }
+
+    if (QFileInfo(m_drive_path, m_drive_exe).isExecutable() == false) return false;
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+// isValid
+// ----------------------------------------------------------------------------
 bool DriveStarter::isValid()
 {
     return m_initialized;
 }
-//////////////////////////////////////////////////////////////////////////
-///
-///
-//////////////////////////////////////////////////////////////////////////
-void DriveStarter::slotStart(const QStringList in_arguments)
+
+// ----------------------------------------------------------------------------
+// slotStart
+// ----------------------------------------------------------------------------
+void DriveStarter::slotStart(const QStringList in_arguments, const bool in_native_args)
 {
     if (m_initialized == false) return;
-    m_drive_process.start(m_drive_path.absoluteFilePath(m_drive_exe), in_arguments);
+
+    if (in_native_args == false)
+        m_drive_process.start(m_drive_path.absoluteFilePath(m_drive_exe), in_arguments);
+    else
+    {
+        m_drive_process.setNativeArguments(in_arguments.join(' '));
+        m_drive_process.setProgram(m_drive_path.absoluteFilePath(m_drive_exe));
+        m_drive_process.start();
+    }
 }
-//////////////////////////////////////////////////////////////////////////
-///
-///
-//////////////////////////////////////////////////////////////////////////
+
+// ----------------------------------------------------------------------------
+// slotTerminate
+// ----------------------------------------------------------------------------
 void DriveStarter::slotTerminate()
 {
     if (m_initialized == false) return;
     m_drive_process.terminate();
 }
-//////////////////////////////////////////////////////////////////////////
-///
-///
-//////////////////////////////////////////////////////////////////////////
+
+// ----------------------------------------------------------------------------
+// slotKill
+// ----------------------------------------------------------------------------
 void DriveStarter::slotKill()
 {
     if (m_initialized == false) return;
     m_drive_process.kill();
 }
-//////////////////////////////////////////////////////////////////////////
-///
-///
-//////////////////////////////////////////////////////////////////////////
+
+// ----------------------------------------------------------------------------
+// Properties ...
+// ----------------------------------------------------------------------------
 QDir DriveStarter::drivePath() const
 {
     return m_drive_path;

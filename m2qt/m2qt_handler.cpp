@@ -23,7 +23,7 @@ Handler::~Handler()
 // ----------------------------------------------------------------------------
 bool Handler::init(const QString &in_name, zmq::context_t *in_zmq_ctx, const QVariantMap &in_params)
 {
-    qDebug() << "Handler::init";
+    qDebug() << "\nHandler::init";
     if (in_zmq_ctx == nullptr) { emit signalError(QStringLiteral("Handler::init - zmq_context == nullptr!")); return false; }
     if (in_params.isEmpty()) { emit signalError(QStringLiteral("Handler::init - Parameter map is empty")); return false; }
     if (update(in_params) == false) { emit signalError(QStringLiteral("Handler::init - update() failed!")); return false; }

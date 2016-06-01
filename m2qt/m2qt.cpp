@@ -320,7 +320,7 @@ SignalAgent *M2QtHelper::getSignalAgent()
 // ----------------------------------------------------------------------------
 // netstring2Json (static)
 // ----------------------------------------------------------------------------
-QJsonObject M2QtHelper::netstring2Json(const NetString &in_netstring)
+QJsonObject M2QtHelper::netstring2Json(const NetString &in_netstring, QByteArray &out_prefix)
 {
-    return ::netstring2Json(in_netstring);
+    return ::netstring2Json(in_netstring, out_prefix);
 }

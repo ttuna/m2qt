@@ -4,6 +4,9 @@
 #include <QObject>
 #include <QProcess>
 #include <QDir>
+#include <QVariant>
+
+#include "global.h"
 
 class DriveStarter : public QObject
 {
@@ -14,7 +17,9 @@ class DriveStarter : public QObject
 public:
     explicit DriveStarter(QObject *parent = 0);
 
-    bool init(const QDir &in_drive_path, const QString &in_drive_exe);
+    bool init(const QVariantMap& in_params);
+    void cleanup();
+    bool update(const QVariantMap& in_params);
     bool isValid();
 
     QDir drivePath() const;
@@ -28,7 +33,7 @@ signals:
     void signalProcessError(QProcess::ProcessError error);
 
 public slots:
-    void slotStart(const QStringList in_arguments);
+    void slotStart(const QStringList in_arguments, const bool in_native_args = false);
     void slotTerminate();
     void slotKill();
 

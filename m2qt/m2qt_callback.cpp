@@ -57,7 +57,7 @@ Response DebugOutputHandler(const Request &in_message)
                      << std::get<NS_DATA>(net_strings[i])
                      << endl;
     }
-    debug_stream << "-------------------------\n" << endl;
+    debug_stream << "-------------------------" << endl;
 
     // remove \0 chars from debug_msg ...
     debug_msg.replace('\0', "");
@@ -89,6 +89,26 @@ Response WebsocketHandshakeHandler(const Request &in_message)
     // build response body ...
     QByteArray response_data(QLatin1String("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: upgrade\r\nSec-WebSocket-Accept: ").data());
     response_data += accept + "\r\n\r\n";
+
+    NetString rep_id = std::make_tuple(static_cast<quint32>(id.size()), id);
+
+    // build Response ...
+    Response rep = std::make_tuple(uuid, rep_id, response_data);
+    return rep;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+Response WebsocketCloseHandler(const Request &in_message)
+{
+    QByteArray uuid, id, path;
+    QVector<NetString> net_strings;
+    std::tie(uuid, id, path, net_strings) = in_message;
+
+    QByteArray response_data;
+    QByteArray ws_header = M2QT::getWebSocketHeader(response_data.size(), 0x08, 0x00);
+    response_data.prepend(ws_header);
 
     NetString rep_id = std::make_tuple(static_cast<quint32>(id.size()), id);
 
@@ -189,6 +209,36 @@ bool WebsocketHandshakeFilter(const Request &in_message)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
+bool WebsocketCloseFilter(const Request &in_message)
+{
+    QByteArray uuid, id, path;
+    QVector<NetString> net_strings;
+    std::tie(uuid, id, path, net_strings) = in_message;
+
+    // get HEADER - first NetString must be the header obj ...
+    QJsonObject jobj = M2QT::getJsonHeader(net_strings);
+    if (jobj.isEmpty()) { emit helper->signalError(QStringLiteral("WebsocketCloseFilter - No header available!")); return false; }
+
+    // get METHOD ...
+    QJsonValue val = jobj.value(QLatin1String("METHOD"));
+    if (val.isUndefined()) { emit helper->signalError(QStringLiteral("WebsocketCloseFilter - Couldn't find METHOD header!")); return false; }
+    // must be "WEBSOCKET" ...
+    if (val.toString() != QLatin1String("WEBSOCKET")) return false;
+
+    // get FLAGS ...
+    val = jobj.value(QLatin1String("FLAGS"));
+    if (val.isUndefined()) { emit helper->signalError(QStringLiteral("WebsocketCloseFilter - Couldn't find FLAGS header!")); return false; }
+    // req opcode must be 0x08 = text frame ...
+    bool ok = false;
+    quint8 value = val.toString().toInt(&ok, 16);
+    if (ok == false || value == 0x0 || (value^(1<<7)) != 0x08) return false;
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
 bool WebsocketEchoFilter(const Request &in_message)
 {
     QByteArray uuid, id, path;
@@ -252,6 +302,7 @@ bool WebsocketPongFilter(const Request &in_message)
 namespace M2Qt {
     const QString DEBUG_OUTPUT_NAME = "debug_output";
     const QString WS_HANDSHAKE_NAME = "websocket_handshake";
+    const QString WS_CLOSE_NAME     = "websocket_close";
     const QString WS_ECHO_NAME      = "websocket_echo";
     const QString WS_PONG_NAME      = "websocket_pong";
     const QString HEAVY_DUTY_NAME   = "heavy_duty";
@@ -270,6 +321,7 @@ QMap<QString, HandlerCallback> CallbackManager::m_handler_callback_map =
 {
     { M2Qt::DEBUG_OUTPUT_NAME,  &DebugOutputHandler },
     { M2Qt::WS_HANDSHAKE_NAME,  &WebsocketHandshakeHandler },
+    { M2Qt::WS_CLOSE_NAME,      &WebsocketCloseHandler },
     { M2Qt::WS_ECHO_NAME,       &WebsocketEchoHandler },
     { M2Qt::WS_PONG_NAME,       &WebsocketPongHandler },
 #ifdef ENABLE_DEV_CALLBACKS
@@ -280,6 +332,7 @@ QMap<QString, HandlerCallback> CallbackManager::m_handler_callback_map =
 QMap<QString, FilterCallback> CallbackManager::m_filter_callback_map =
 {
     { M2Qt::WS_HANDSHAKE_NAME,  &WebsocketHandshakeFilter },
+    { M2Qt::WS_CLOSE_NAME,      &WebsocketCloseFilter },
     { M2Qt::WS_ECHO_NAME,       &WebsocketEchoFilter },
     { M2Qt::WS_PONG_NAME,       &WebsocketPongFilter },
 };

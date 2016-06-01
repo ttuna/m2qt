@@ -27,11 +27,15 @@ int main(int argc, char *argv[])
     handler_params.clear();
     handler_params[QLatin1String("default_callback")] = QLatin1String("websocket_handshake");
     controller.createHandler(QLatin1String("websocket_handshake"), handler_params);
-    // echo handler
+    // websocket close handler
+    handler_params.clear();
+    handler_params[QLatin1String("default_callback")] = QLatin1String("websocket_close");
+    controller.createHandler(QLatin1String("websocket_close"), handler_params);
+    // websocket echo handler
     handler_params.clear();
     handler_params[QLatin1String("default_callback")] = QLatin1String("websocket_echo");
     controller.createHandler(QLatin1String("websocket_echo"), handler_params);
-    // pong handler
+    // websocket pong handler
     handler_params.clear();
     handler_params[QLatin1String("default_callback")] = QLatin1String("websocket_pong");
     controller.createHandler(QLatin1String("websocket_pong"), handler_params);

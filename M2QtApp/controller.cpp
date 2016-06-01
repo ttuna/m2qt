@@ -24,6 +24,7 @@ Controller::~Controller()
 // ----------------------------------------------------------------------------
 bool Controller::init(const QVariantMap &in_params)
 {
+    qDebug() << "\nController::init";
     if (update(in_params) == false) return false;
 
     m_p_m2qt = M2QtHelper::getM2Qt(in_params);
@@ -83,7 +84,7 @@ bool Controller::createHandler(const QString &in_name, const QVariantMap &in_par
 
     bool created = m_p_m2qt->createHandler(in_name, in_params);
 
-    if (created == false) qDebug() << "Controller::createHandler - handler creation failed ...";
+    if (created == false) qDebug() << "\nController::createHandler - handler creation failed ...";
     else m_handler_names.push_back(in_name);
 
     return created;
