@@ -121,8 +121,9 @@ static QJsonObject netstring2Json(const NetString &in_netstring, QByteArray& out
 static QJsonObject getJsonHeader(const QVector<NetString> &in_netstrings)
 {
     if (in_netstrings.isEmpty()) return QJsonObject();
-    NetString header = in_netstrings[0];    // the first NetString is the header!!!
 
+    // first NetString must be the header ...
+    NetString header = in_netstrings[0];
     return netstring2Json(header);
 }
 

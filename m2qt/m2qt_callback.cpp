@@ -74,7 +74,7 @@ Response WebsocketHandshakeHandler(const Request &in_message)
     QVector<NetString> net_strings;
     std::tie(uuid, id, path, net_strings) = in_message;
 
-    // get HEADER - first NetString must be the header ...
+    // get HEADER ...
     QJsonObject jobj = M2QT::getJsonHeader(net_strings);
     if (jobj.isEmpty()) { emit helper->signalError(QStringLiteral("WebsocketHandshakeHandler - No header available!")); return Response(); }
 
@@ -85,6 +85,9 @@ Response WebsocketHandshakeHandler(const Request &in_message)
     // calc SEC-WEBSOCKET-ACCEPT ...
     QByteArray key = val.toString().toLatin1() + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     QByteArray accept = QCryptographicHash::hash(key, QCryptographicHash::Sha1).toBase64();
+
+    // TODO: consider SEC-WEBSOCKET-PROTOCOL ... (see https://tools.ietf.org/html/rfc6455#section-11.3.4)
+    // TODO: consider SEC-WEBSOCKET-EXTENSIONS ... (see https://tools.ietf.org/html/rfc6455#section-11.3.2)
 
     // build response body ...
     QByteArray response_data(QLatin1String("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: upgrade\r\nSec-WebSocket-Accept: ").data());
