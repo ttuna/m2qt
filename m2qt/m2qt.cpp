@@ -194,7 +194,7 @@ bool M2Qt::createHandler(const QString& in_name, const QVariantMap &in_params)
 
     if (m_handler_map.contains(in_name))
     {
-        emit signalError("M2Qt::createHandler - Handler already exists!");
+        emit signalError(QStringLiteral("M2Qt::createHandler - Handler already exists!"));
         return (m_handler_map.value(in_name, nullptr) != nullptr);
     }
 

@@ -50,19 +50,19 @@ void ServerConnection::cleanup()
 // ----------------------------------------------------------------------------
 bool ServerConnection::update(const QVariantMap &in_params)
 {
-    if (in_params.contains("pull_addr"))
+    if (in_params.contains(QLatin1String("pull_addr")))
     {
-        m_pull_addr = in_params["pull_addr"].toByteArray();
+        m_pull_addr = in_params[QLatin1String("pull_addr")].toByteArray();
         qDebug() << "ServerConnection::update - pull_addr:" << m_pull_addr;
     }
-    if (in_params.contains(("pub_addr")))
+    if (in_params.contains(QLatin1String("pub_addr")))
     {
-        m_pub_addr = in_params["pub_addr"].toByteArray();
+        m_pub_addr = in_params[QLatin1String("pub_addr")].toByteArray();
         qDebug() << "ServerConnection::update - pub_addr:" << m_pub_addr;
     }
-    if (in_params.contains(("sender_id")))
+    if (in_params.contains(QLatin1String("sender_id")))
     {
-        m_sender_id = in_params["sender_id"].toByteArray();
+        m_sender_id = in_params[QLatin1String("sender_id")].toByteArray();
         qDebug() << "ServerConnection::update - sender_id:" << m_sender_id;
     }
 

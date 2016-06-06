@@ -48,27 +48,30 @@ void Handler::cleanup()
 // ----------------------------------------------------------------------------
 bool Handler::update(const QVariantMap& in_params)
 {
-    if (in_params.contains("default_callback"))
+    QString key(QLatin1String("default_callback"));
+    if (in_params.contains(key))
     {
-        QString def_callback = in_params["default_callback"].toString();
+        QString def_callback = in_params[key].toString();
         // get handler callback ...
         m_handler_callback = CallbackManager::getHandlerCallback(def_callback);
         // get corresponding filter callback ...
         m_filter_callback = CallbackManager::getFilterCallback(def_callback);
-        qDebug() << "Handler::update - default_callback:" << def_callback;
+        qDebug() << "Handler::update - default_callback / filter_callback:" << def_callback;
     }
 
-    if (in_params.contains("user_callback"))
+    key = QLatin1String("user_callback");
+    if (in_params.contains(key))
     {
-        QVariant var_handler = in_params.value("user_callback", QVariant());
+        QVariant var_handler = in_params.value(key, QVariant());
         if (var_handler.isValid() == false) return false;
         qDebug() << "Handler::update - user_callback:" << var_handler;
         m_handler_callback = var_handler.value<HandlerCallback>();
     }
 
-    if (in_params.contains("user_filter"))
+    key = QLatin1String("user_filter");
+    if (in_params.contains(key))
     {
-        QVariant var_filter = in_params.value("user_filter", QVariant());
+        QVariant var_filter = in_params.value(key, QVariant());
         if (var_filter.isValid() == false) return false;
         qDebug() << "Handler::update - user_filter:" << var_filter;
         m_filter_callback = var_filter.value<FilterCallback>();
@@ -117,7 +120,7 @@ bool Handler::setHandlerCallback(HandlerCallback in_callback)
     if (m_initialized == false) { emit signalError(QStringLiteral("Handler::setHandlerCallback - Handler not initialized!")); return false; }
 
     m_handler_callback = in_callback;
-    emit signalDebug("Handler::setHandlerCallback - set handler callback");
+    emit signalDebug(QStringLiteral("Handler::setHandlerCallback - set handler callback"));
     return true;
 }
 

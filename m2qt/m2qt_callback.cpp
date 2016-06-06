@@ -90,7 +90,7 @@ Response WebsocketHandshakeHandler(const Request &in_message)
     // TODO: consider SEC-WEBSOCKET-EXTENSIONS ... (see https://tools.ietf.org/html/rfc6455#section-11.3.2)
 
     // build response body ...
-    QByteArray response_data(QLatin1String("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: upgrade\r\nSec-WebSocket-Accept: ").data());
+    QByteArray response_data("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: upgrade\r\nSec-WebSocket-Accept: ");
     response_data += accept + "\r\n\r\n";
 
     NetString rep_id = std::make_tuple(static_cast<quint32>(id.size()), id);
@@ -231,7 +231,7 @@ bool WebsocketCloseFilter(const Request &in_message)
     // get FLAGS ...
     val = jobj.value(QLatin1String("FLAGS"));
     if (val.isUndefined()) { emit helper->signalError(QStringLiteral("WebsocketCloseFilter - Couldn't find FLAGS header!")); return false; }
-    // req opcode must be 0x08 = text frame ...
+    // req opcode must be 0x08 = close frame ...
     bool ok = false;
     quint8 value = val.toString().toInt(&ok, 16);
     if (ok == false || value == 0x0 || (value^(1<<7)) != 0x08) return false;
