@@ -10,18 +10,23 @@ QT += network
 QT += websockets
 QT += concurrent
 
-CONFIG += c++11
-#DEFINES += homeoffice
-DEFINES += ENABLE_DEV_CALLBACKS
-
 TARGET = m2qt
 TEMPLATE = lib
 
+CONFIG += c++11
+
+#DEFINES += homeoffice
+DEFINES += ENABLE_DEV_CALLBACKS
 DEFINES += M2QTSHARED_EXPORT
 DEFINES *= QT_USE_QSTRINGBUILDER
 DEFINES *= QT_NO_CAST_TO_ASCII \
            QT_RESTRICTED_CAST_FROM_ASCII
 
+INCLUDE_DIR = $$PWD/../include
+INCLUDEPATH += $$INCLUDE_DIR
+DEPENDPATH += $$INCLUDE_DIR
+
+# windows - build settings ...
 windows {
     contains(QT_ARCH, i386) {
         PLATFORM = Win32
@@ -41,8 +46,7 @@ windows {
     LINKAGE = dynamic
 }
 
-INCLUDE_DIR = $$PWD/../include
-
+# windows - external libraries ...
 windows {
     contains(DEFINES, homeoffice) {
         SODIUM_DIR = c:/MyTools/ZeroMQ/libsodium
@@ -63,16 +67,14 @@ windows {
         $$CPP_ZMQ_DIR
 }
 
-INCLUDEPATH += $$INCLUDE_DIR
-DEPENDPATH += $$INCLUDE_DIR
-
+# windows - dependencies & destinations ...
 windows {
     LIBS += -L$$SODIUM_DIR/bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET/$$LINKAGE -llibsodium
     LIBS += -L$$ZMQ_DIR/bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET/$$LINKAGE -llibzmq
-}
 
-DESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET     #copy .lib file
-DLLDESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET  #copy .dll file
+    DESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET     #copy .lib file
+    DLLDESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET  #copy .dll file
+}
 
 HEADERS += $$INCLUDE_DIR/m2qt.h
 
