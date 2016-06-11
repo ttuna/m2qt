@@ -41,7 +41,7 @@ private slots:
 
 private:
     bool m_initialized = false;
-    M2QT::IM2Qt* m_p_m2qt;
+    M2QT::IM2Qt* m_p_m2qt = nullptr;
     M2QT::SignalAgent* m_p_signal_agent = nullptr;
     QVector<QString> m_handler_names;
 };

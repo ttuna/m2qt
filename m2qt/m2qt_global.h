@@ -76,12 +76,14 @@ static QByteArray getHTTPHeader(const QVector<NetString> &in_headers, const quin
     Q_UNUSED(in_headers)
     Q_UNUSED(in_status_code)
     Q_UNUSED(in_status)
+
+    return QByteArray();
 }
 
 // ----------------------------------------------------------------------------
 // getJsonData
 // ----------------------------------------------------------------------------
-static QJsonObject netstring2Json(const NetString &in_netstring, QByteArray& out_prefix = QByteArray())
+static QJsonObject netstring2Json(const NetString &in_netstring, QByteArray& out_prefix = default_param)
 {
     quint32 size = std::get<NS_SIZE>(in_netstring);
     if (size == 0) return QJsonObject();
@@ -155,7 +157,8 @@ static T to(const Response &in_msg)
     std::tie(uuid, id, data) = in_msg;
     std::tie(id_len, id_data) = id;
 
-    QVariant rep_data = uuid + ' ' + QByteArray::number(id_len) + ':' + id_data + ',' + ' ' + data;
+    QVariant rep_data;
+    QByteArray buffer = uuid + ' ' + QByteArray::number(id_len) + ':' + id_data + ',' + ' ' + data;
     if (rep_data.canConvert<T>() == true)
         return rep_data.value<T>();
     else
@@ -166,7 +169,7 @@ static T to(const Response &in_msg)
 // to<zmq::message_t>
 // ----------------------------------------------------------------------------
 template <>
-static zmq::message_t to<zmq::message_t>(const Response &in_msg)
+zmq::message_t to<zmq::message_t>(const Response &in_msg)
 {
     NetString id;
     quint32 id_len;

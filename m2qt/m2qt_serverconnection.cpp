@@ -88,6 +88,7 @@ void ServerConnection::poll()
 {
     qDebug() << "\nServerConnection::poll";
     if (m_initialized == false) { emit signalError(QStringLiteral("ServerConnection::poll - ServerConnection not initialized!")); return; }
+    if (m_p_zmq_ctx == nullptr) qDebug() << "ServerConnection::poll - ctx:" << m_p_zmq_ctx;
 
     // init connections ...
     qDebug() << "ServerConnection::poll - pull addr:" << m_pull_addr.data();
@@ -97,7 +98,7 @@ void ServerConnection::poll()
     // init poller ...
     zmq::message_t msg;
     zmq::pollitem_t items [] = {
-        { *pull_sock, 0, ZMQ_POLLIN, 0 }
+        { pull_sock, 0, ZMQ_POLLIN, 0 }
     };
 
     // set running-flag and ... BANZAIIII!!!
@@ -125,6 +126,7 @@ void ServerConnection::poll()
     }
 
     // cleanup ...
+    qDebug() << "ServerConnection::poll - leaving ...";
     int time = 0;
     if (pull_sock)
     {

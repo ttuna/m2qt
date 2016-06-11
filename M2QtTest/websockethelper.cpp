@@ -1,5 +1,10 @@
 ﻿#include "websockethelper.h"
+
+#ifdef _MSC_VER
 #include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 // ----------------------------------------------------------------------------
 //
@@ -105,7 +110,11 @@ void WebSocketHelper::slotOnConnected()
 {
     qDebug() << "WebSocketHelper::slotOnConnected";
     m_ws_connected = true;
+#ifdef _MSC_VER
     Sleep(10);
+#else
+    usleep(10 * 1000);
+#endif
 
     // send greetings after websocket is connected ...
     send("message", "Hello Mongrel!");

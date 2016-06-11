@@ -84,12 +84,12 @@ private:
 
 } // namespace
 
-using namespace M2QT;
+//using namespace M2QT;
 
 // ----------------------------------------------------------------------------
 // dtor ...
 // ----------------------------------------------------------------------------
-M2Qt::~M2Qt()
+M2QT::M2Qt::~M2Qt()
 {
     cleanup();
 }
@@ -97,8 +97,9 @@ M2Qt::~M2Qt()
 // ----------------------------------------------------------------------------
 // init
 // ----------------------------------------------------------------------------
-bool M2Qt::init(zmq::context_t* in_ctx, const QVariantMap& in_params)
+bool M2QT::M2Qt::init(zmq::context_t* in_ctx, const QVariantMap& in_params)
 {
+    using namespace M2QT;
     qDebug() << "M2Qt::init";
     if (in_ctx == nullptr) { emit signalError(QStringLiteral("M2Qt::init - zmq_context == null!")); return false; }
     if (update(in_params) == false) { emit signalError("M2Qt::init - update() failed!"); return false; }
@@ -131,7 +132,7 @@ bool M2Qt::init(zmq::context_t* in_ctx, const QVariantMap& in_params)
 // ----------------------------------------------------------------------------
 // cleanup
 // ----------------------------------------------------------------------------
-void M2Qt::cleanup()
+void M2QT::M2Qt::cleanup()
 {
     qDebug() << "M2Qt::cleanup";
     stop();
@@ -148,7 +149,7 @@ void M2Qt::cleanup()
 // ----------------------------------------------------------------------------
 // update
 // ----------------------------------------------------------------------------
-bool M2Qt::update(const QVariantMap& in_params)
+bool M2QT::M2Qt::update(const QVariantMap& in_params)
 {
     Q_UNUSED(in_params)
     return true;
@@ -157,7 +158,7 @@ bool M2Qt::update(const QVariantMap& in_params)
 // ----------------------------------------------------------------------------
 // isValid
 // ----------------------------------------------------------------------------
-bool M2Qt::isValid() const
+bool M2QT::M2Qt::isValid() const
 {
     return m_initialized;
 }
@@ -165,7 +166,7 @@ bool M2Qt::isValid() const
 // ----------------------------------------------------------------------------
 // setSignalAgent
 // ----------------------------------------------------------------------------
-void M2Qt::setSignalAgent(SignalAgent* in_signal_agent)
+void M2QT::M2Qt::setSignalAgent(SignalAgent* in_signal_agent)
 {
     disconnect(this, &M2Qt::signalError, 0, 0);
     disconnect(this, &M2Qt::signalWarning, 0, 0);
@@ -186,7 +187,7 @@ void M2Qt::setSignalAgent(SignalAgent* in_signal_agent)
 // ----------------------------------------------------------------------------
 // createHandler
 // ----------------------------------------------------------------------------
-bool M2Qt::createHandler(const QString& in_name, const QVariantMap &in_params)
+bool M2QT::M2Qt::createHandler(const QString& in_name, const QVariantMap &in_params)
 {
     if (m_initialized == false) { emit signalError(QStringLiteral("M2Qt::createHandler - M2Qt not initialized!")); return false; }
     if (in_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::createHandler - Handler name is empty!")); return false; }
@@ -216,7 +217,7 @@ bool M2Qt::createHandler(const QString& in_name, const QVariantMap &in_params)
 // ----------------------------------------------------------------------------
 // start
 // ----------------------------------------------------------------------------
-void M2Qt::start()
+void M2QT::M2Qt::start()
 {
     if (m_initialized == false) { emit signalError(QStringLiteral("M2Qt::start - M2Qt not initialized!")); return; }
 
@@ -233,7 +234,7 @@ void M2Qt::start()
 // ----------------------------------------------------------------------------
 // stop
 // ----------------------------------------------------------------------------
-void M2Qt::stop()
+void M2QT::M2Qt::stop()
 {
     if (m_initialized == false) { emit signalError(QStringLiteral("M2Qt::stopHandler - M2Qt not initialized!")); return; }
     m_p_server_con->stop();
@@ -243,7 +244,7 @@ void M2Qt::stop()
 // ----------------------------------------------------------------------------
 // setHandlerCallback
 // ----------------------------------------------------------------------------
-void M2Qt::setHandlerCallback(const QString& in_handler_name, const QString& in_callback_name, HandlerCallback in_callback) const
+void M2QT::M2Qt::setHandlerCallback(const QString& in_handler_name, const QString& in_callback_name, HandlerCallback in_callback) const
 {
     if (m_initialized == false) { emit signalError(QStringLiteral("M2Qt::setHandlerCallback - M2Qt not initialized!")); return; }
     if (in_handler_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::setHandlerCallback - handler name is empty!")); return; }
@@ -259,7 +260,7 @@ void M2Qt::setHandlerCallback(const QString& in_handler_name, const QString& in_
 // ----------------------------------------------------------------------------
 // setFilterCallback
 // ----------------------------------------------------------------------------
-void M2Qt::setFilterCallback(const QString &in_handler_name, const QString &in_callback_name, FilterCallback in_callback) const
+void M2QT::M2Qt::setFilterCallback(const QString &in_handler_name, const QString &in_callback_name, FilterCallback in_callback) const
 {
     if (m_initialized == false) { emit signalError(QStringLiteral("M2Qt::setFilterCallback - M2Qt not initialized!")); return; }
     if (in_handler_name.isEmpty()) { emit signalError(QStringLiteral("M2Qt::setFilterCallback - handler name is empty!")); return; }
@@ -275,7 +276,7 @@ void M2Qt::setFilterCallback(const QString &in_handler_name, const QString &in_c
 // ----------------------------------------------------------------------------
 // Properties ...
 // ----------------------------------------------------------------------------
-SignalAgent *M2Qt::signalAgent() const
+M2QT::SignalAgent *M2QT::M2Qt::signalAgent() const
 {
     return m_p_signal_agent;
 }
@@ -290,7 +291,7 @@ SignalAgent *M2Qt::signalAgent() const
 // ----------------------------------------------------------------------------
 // getM2Qt (static)
 // ----------------------------------------------------------------------------
-IM2Qt *M2QtHelper::getM2Qt(const QVariantMap &in_params)
+M2QT::IM2Qt *M2QT::M2QtHelper::getM2Qt(const QVariantMap &in_params)
 {
     static M2Qt *p_lib;
 
@@ -312,7 +313,7 @@ IM2Qt *M2QtHelper::getM2Qt(const QVariantMap &in_params)
 // ----------------------------------------------------------------------------
 // getSignalAgent (static)
 // ----------------------------------------------------------------------------
-SignalAgent *M2QtHelper::getSignalAgent()
+M2QT::SignalAgent *M2QT::M2QtHelper::getSignalAgent()
 {
     return new SignalAgent();
 }
@@ -320,7 +321,7 @@ SignalAgent *M2QtHelper::getSignalAgent()
 // ----------------------------------------------------------------------------
 // netstring2Json (static)
 // ----------------------------------------------------------------------------
-QJsonObject M2QtHelper::netstring2Json(const NetString &in_netstring, QByteArray &out_prefix)
+QJsonObject M2QT::M2QtHelper::netstring2Json(const NetString &in_netstring, QByteArray &out_prefix)
 {
-    return ::netstring2Json(in_netstring, out_prefix);
+    return M2QT::netstring2Json(in_netstring, out_prefix);
 }

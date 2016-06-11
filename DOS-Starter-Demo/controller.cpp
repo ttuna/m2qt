@@ -63,7 +63,7 @@ bool callbackFilter(const Request& in_req)
     prefix = prefix.trimmed();
     qDebug() << "callbackFilter - prefix:" << prefix;
 
-    if (prefix == QLatin1String("@starter_msg")) return true;
+    if (prefix == QByteArray("@starter_msg")) return true;
     return false;
 }
 
