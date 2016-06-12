@@ -98,7 +98,7 @@ void ServerConnection::poll()
     // init poller ...
     zmq::message_t msg;
     zmq::pollitem_t items [] = {
-        { pull_sock, 0, ZMQ_POLLIN, 0 }
+        { *pull_sock, 0, ZMQ_POLLIN, 0 }
     };
 
     // set running-flag and ... BANZAIIII!!!

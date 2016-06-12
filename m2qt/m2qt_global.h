@@ -157,8 +157,9 @@ static T to(const Response &in_msg)
     std::tie(uuid, id, data) = in_msg;
     std::tie(id_len, id_data) = id;
 
-    QVariant rep_data;
+
     QByteArray buffer = uuid + ' ' + QByteArray::number(id_len) + ':' + id_data + ',' + ' ' + data;
+    QVariant rep_data(buffer);
     if (rep_data.canConvert<T>() == true)
         return rep_data.value<T>();
     else
@@ -169,7 +170,7 @@ static T to(const Response &in_msg)
 // to<zmq::message_t>
 // ----------------------------------------------------------------------------
 template <>
-zmq::message_t to<zmq::message_t>(const Response &in_msg)
+static zmq::message_t to<zmq::message_t>(const Response &in_msg)
 {
     NetString id;
     quint32 id_len;
