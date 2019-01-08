@@ -85,7 +85,9 @@ void DriveStarter::slotStart(const QStringList in_arguments, const bool in_nativ
         m_drive_process.start(m_drive_path.absoluteFilePath(m_drive_exe), in_arguments);
     else
     {
+#ifdef _MSC_VER
         m_drive_process.setNativeArguments(in_arguments.join(' '));
+#endif
         m_drive_process.setProgram(m_drive_path.absoluteFilePath(m_drive_exe));
         m_drive_process.start();
     }

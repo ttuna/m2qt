@@ -20,10 +20,15 @@
 #    define M2QTSHARED_EXPORT Q_DECL_EXPORT
 #  endif
 #else
+#  ifdef M2QTSHARED_EXPORT
+#    undef M2QTSHARED_EXPORT
+#  endif
 #  define M2QTSHARED_EXPORT
 #endif
 
 namespace M2QT {
+
+static QByteArray default_param;
 
 // Mongrel2 NetString   = size | data
 using NetString = std::tuple<quint32, QByteArray>;
@@ -42,11 +47,6 @@ using HandlerCallback = std::function<Response(const Request&)>;
 
 // Prototype of handler callback ...
 using FilterCallback = std::function<bool(const Request&)>;
-
-// ----------------------------------------------------------------------------
-Q_DECLARE_METATYPE(M2QT::HandlerCallback)
-Q_DECLARE_METATYPE(M2QT::FilterCallback)
-// ----------------------------------------------------------------------------
 
 
 // ----------------------------------------------------------------------------
@@ -112,9 +112,14 @@ public:
 
     M2QTSHARED_EXPORT static M2QT::IM2Qt *getM2Qt(const QVariantMap &in_params = QVariantMap());
     M2QTSHARED_EXPORT static M2QT::SignalAgent *getSignalAgent();
-    M2QTSHARED_EXPORT static QJsonObject netstring2Json(const NetString &in_netstring, QByteArray &out_prefix = QByteArray());
+    M2QTSHARED_EXPORT static QJsonObject netstring2Json(const NetString &in_netstring, QByteArray &out_prefix = default_param);
 };
 
 } // namespace M2QT
+
+// ----------------------------------------------------------------------------
+Q_DECLARE_METATYPE(M2QT::HandlerCallback)
+Q_DECLARE_METATYPE(M2QT::FilterCallback)
+// ----------------------------------------------------------------------------
 
 #endif // M2QT_H

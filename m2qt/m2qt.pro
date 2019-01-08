@@ -15,7 +15,7 @@ TEMPLATE = lib
 
 CONFIG += c++11
 
-#DEFINES += homeoffice
+DEFINES += homeoffice
 DEFINES += ENABLE_DEV_CALLBACKS
 DEFINES += M2QTSHARED_EXPORT
 DEFINES *= QT_USE_QSTRINGBUILDER
@@ -26,7 +26,7 @@ INCLUDE_DIR = $$PWD/../include
 INCLUDEPATH += $$INCLUDE_DIR
 DEPENDPATH += $$INCLUDE_DIR
 
-# windows - build settings ...
+# build settings ...
 windows {
     contains(QT_ARCH, i386) {
         PLATFORM = Win32
@@ -46,7 +46,7 @@ windows {
     LINKAGE = dynamic
 }
 
-# windows - external libraries ...
+# dependencies & destinations ...
 windows {
     contains(DEFINES, homeoffice) {
         SODIUM_DIR = c:/MyTools/ZeroMQ/libsodium
@@ -65,17 +65,27 @@ windows {
         $$SODIUM_DIR/src/libsodium/include \
         $$ZMQ_DIR/include \
         $$CPP_ZMQ_DIR
-}
-
-# windows - dependencies & destinations ...
-windows {
-    LIBS += -L$$SODIUM_DIR/bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET/$$LINKAGE -llibsodium
-    LIBS += -L$$ZMQ_DIR/bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET/$$LINKAGE -llibzmq
 
     DESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET     #copy .lib file
     DLLDESTDIR = $$PWD/../bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET  #copy .dll file
 }
+unix {
+    INCLUDEPATH += /usr/local/include
+    DEPENDPATH += /usr/local/include
+}
 
+# external libraries ...
+windows {
+    LIBS += -L$$SODIUM_DIR/bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET/$$LINKAGE -llibsodium
+    LIBS += -L$$ZMQ_DIR/bin/$$PLATFORM/$$CONFIGURATION/$$PLATFORM_TOOLSET/$$LINKAGE -llibzmq
+}
+unix {
+    LIBS += -L/usr/local/lib -lsodium
+    LIBS += -L/usr/local/lib -lzmq
+}
+
+
+# files ...
 HEADERS += $$INCLUDE_DIR/m2qt.h
 
 include(m2qt.pri)

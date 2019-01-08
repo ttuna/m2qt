@@ -4,7 +4,7 @@
 #include <QMessageLogger>
 #include <QDebug>
 
-using namespace M2QT;
+//using namespace M2QT;
 
 // ----------------------------------------------------------------------------
 // ctor / dtor ...
@@ -27,16 +27,16 @@ bool Controller::init(const QVariantMap &in_params)
     qDebug() << "\nController::init";
     if (update(in_params) == false) return false;
 
-    m_p_m2qt = M2QtHelper::getM2Qt(in_params);
+    m_p_m2qt = M2QT::M2QtHelper::getM2Qt(in_params);
     if (m_p_m2qt == nullptr) return false;
 
-    m_p_signal_agent = M2QtHelper::getSignalAgent();
+    m_p_signal_agent = M2QT::M2QtHelper::getSignalAgent();
     if (m_p_signal_agent == nullptr) return false;
 
-    connect(m_p_signal_agent, &SignalAgent::signalError, this, &Controller::slotError);
-    connect(m_p_signal_agent, &SignalAgent::signalWarning, this, &Controller::slotWarning);
-    connect(m_p_signal_agent, &SignalAgent::signalDebug, this, &Controller::slotDebug);
-    connect(m_p_signal_agent, &SignalAgent::signalInfo, this, &Controller::slotInfo);
+    connect(m_p_signal_agent, &M2QT::SignalAgent::signalError, this, &Controller::slotError);
+    connect(m_p_signal_agent, &M2QT::SignalAgent::signalWarning, this, &Controller::slotWarning);
+    connect(m_p_signal_agent, &M2QT::SignalAgent::signalDebug, this, &Controller::slotDebug);
+    connect(m_p_signal_agent, &M2QT::SignalAgent::signalInfo, this, &Controller::slotInfo);
 
     m_p_m2qt->setSignalAgent(m_p_signal_agent);
 

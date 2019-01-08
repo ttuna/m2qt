@@ -12,9 +12,9 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
 
 #ifndef homeoffice
-    QUrl url("ws://157.247.245.36:6767/websocket/");
+    QUrl url("ws://157.247.245.36:6767/websocket");
 #else
-    QUrl url("ws://192.168.0.13:6767/websocket/");
+    QUrl url("ws://192.168.0.13:6767/websocket");
 #endif
 
     QVariantMap params;
